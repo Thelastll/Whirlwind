@@ -1,0 +1,148 @@
+{
+  "Version": 1,
+  "WorkspaceRootPath": "C:\\Users\\Admin\\Desktop\\\u0423\u0440\u0430\u0433\u0430\u043D (Whirlwind)\\Whirlwind\\",
+  "Documents": [
+    {
+      "AbsoluteMoniker": "D:0:0:{B1FC9775-BDE0-41A4-0DE4-E4B74FDEF15A}|Whirlwind\\Whirlwind.csproj|c:\\users\\admin\\desktop\\\u0443\u0440\u0430\u0433\u0430\u043D (whirlwind)\\whirlwind\\whirlwind\\mainwindow.xaml.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{B1FC9775-BDE0-41A4-0DE4-E4B74FDEF15A}|Whirlwind\\Whirlwind.csproj|solutionrelative:whirlwind\\mainwindow.xaml.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{B1FC9775-BDE0-41A4-0DE4-E4B74FDEF15A}|Whirlwind\\Whirlwind.csproj|C:\\Users\\Admin\\Desktop\\\u0423\u0440\u0430\u0433\u0430\u043D (Whirlwind)\\Whirlwind\\whirlwind\\mainwindow.xaml||{F11ACC28-31D1-4C80-A34B-F4E09D3D753C}",
+      "RelativeMoniker": "D:0:0:{B1FC9775-BDE0-41A4-0DE4-E4B74FDEF15A}|Whirlwind\\Whirlwind.csproj|solutionrelative:whirlwind\\mainwindow.xaml||{F11ACC28-31D1-4C80-A34B-F4E09D3D753C}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{B1FC9775-BDE0-41A4-0DE4-E4B74FDEF15A}|Whirlwind\\Whirlwind.csproj|C:\\Users\\Admin\\Desktop\\\u0423\u0440\u0430\u0433\u0430\u043D (Whirlwind)\\Whirlwind\\whirlwind\\properties\\settings.designer.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{B1FC9775-BDE0-41A4-0DE4-E4B74FDEF15A}|Whirlwind\\Whirlwind.csproj|solutionrelative:whirlwind\\properties\\settings.designer.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{B1FC9775-BDE0-41A4-0DE4-E4B74FDEF15A}|Whirlwind\\Whirlwind.csproj|C:\\Users\\Admin\\Desktop\\\u0423\u0440\u0430\u0433\u0430\u043D (Whirlwind)\\Whirlwind\\whirlwind\\adduser.xaml||{F11ACC28-31D1-4C80-A34B-F4E09D3D753C}",
+      "RelativeMoniker": "D:0:0:{B1FC9775-BDE0-41A4-0DE4-E4B74FDEF15A}|Whirlwind\\Whirlwind.csproj|solutionrelative:whirlwind\\adduser.xaml||{F11ACC28-31D1-4C80-A34B-F4E09D3D753C}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{B1FC9775-BDE0-41A4-0DE4-E4B74FDEF15A}|Whirlwind\\Whirlwind.csproj|C:\\Users\\Admin\\Desktop\\\u0423\u0440\u0430\u0433\u0430\u043D (Whirlwind)\\Whirlwind\\whirlwind\\enterwindow.xaml||{F11ACC28-31D1-4C80-A34B-F4E09D3D753C}",
+      "RelativeMoniker": "D:0:0:{B1FC9775-BDE0-41A4-0DE4-E4B74FDEF15A}|Whirlwind\\Whirlwind.csproj|solutionrelative:whirlwind\\enterwindow.xaml||{F11ACC28-31D1-4C80-A34B-F4E09D3D753C}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{B1FC9775-BDE0-41A4-0DE4-E4B74FDEF15A}|Whirlwind\\Whirlwind.csproj|C:\\Users\\Admin\\Desktop\\\u0423\u0440\u0430\u0433\u0430\u043D (Whirlwind)\\Whirlwind\\whirlwind\\native.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{B1FC9775-BDE0-41A4-0DE4-E4B74FDEF15A}|Whirlwind\\Whirlwind.csproj|solutionrelative:whirlwind\\native.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{B1FC9775-BDE0-41A4-0DE4-E4B74FDEF15A}|Whirlwind\\Whirlwind.csproj|C:\\Users\\Admin\\Desktop\\\u0423\u0440\u0430\u0433\u0430\u043D (Whirlwind)\\Whirlwind\\whirlwind\\enterwindow.xaml.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{B1FC9775-BDE0-41A4-0DE4-E4B74FDEF15A}|Whirlwind\\Whirlwind.csproj|solutionrelative:whirlwind\\enterwindow.xaml.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{B1FC9775-BDE0-41A4-0DE4-E4B74FDEF15A}|Whirlwind\\Whirlwind.csproj|C:\\Users\\Admin\\Desktop\\\u0423\u0440\u0430\u0433\u0430\u043D (Whirlwind)\\Whirlwind\\whirlwind\\adduser.xaml.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{B1FC9775-BDE0-41A4-0DE4-E4B74FDEF15A}|Whirlwind\\Whirlwind.csproj|solutionrelative:whirlwind\\adduser.xaml.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    }
+  ],
+  "DocumentGroupContainers": [
+    {
+      "Orientation": 0,
+      "VerticalTabListWidth": 256,
+      "DocumentGroups": [
+        {
+          "DockedWidth": 200,
+          "SelectedChildIndex": 7,
+          "Children": [
+            {
+              "$type": "Document",
+              "DocumentIndex": 5,
+              "Title": "Native.cs",
+              "DocumentMoniker": "C:\\Users\\Admin\\Desktop\\\u0423\u0440\u0430\u0433\u0430\u043D (Whirlwind)\\Whirlwind\\Whirlwind\\Native.cs",
+              "RelativeDocumentMoniker": "Whirlwind\\Native.cs",
+              "ToolTip": "C:\\Users\\Admin\\Desktop\\\u0423\u0440\u0430\u0433\u0430\u043D (Whirlwind)\\Whirlwind\\Whirlwind\\Native.cs",
+              "RelativeToolTip": "Whirlwind\\Native.cs",
+              "ViewState": "AgIAAAEAAAAAAAAAAAAYwB0AAAAiAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2026-04-17T08:24:08.945Z",
+              "IsPinned": true
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 2,
+              "Title": "Settings.Designer.cs",
+              "DocumentMoniker": "C:\\Users\\Admin\\Desktop\\\u0423\u0440\u0430\u0433\u0430\u043D (Whirlwind)\\Whirlwind\\Whirlwind\\Properties\\Settings.Designer.cs",
+              "RelativeDocumentMoniker": "Whirlwind\\Properties\\Settings.Designer.cs",
+              "ToolTip": "C:\\Users\\Admin\\Desktop\\\u0423\u0440\u0430\u0433\u0430\u043D (Whirlwind)\\Whirlwind\\Whirlwind\\Properties\\Settings.Designer.cs",
+              "RelativeToolTip": "Whirlwind\\Properties\\Settings.Designer.cs",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAABIAAAAhAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2026-04-17T07:52:45.98Z",
+              "IsPinned": true
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 3,
+              "Title": "AddUser.xaml",
+              "DocumentMoniker": "C:\\Users\\Admin\\Desktop\\\u0423\u0440\u0430\u0433\u0430\u043D (Whirlwind)\\Whirlwind\\Whirlwind\\AddUser.xaml",
+              "RelativeDocumentMoniker": "Whirlwind\\AddUser.xaml",
+              "ToolTip": "C:\\Users\\Admin\\Desktop\\\u0423\u0440\u0430\u0433\u0430\u043D (Whirlwind)\\Whirlwind\\Whirlwind\\AddUser.xaml",
+              "RelativeToolTip": "Whirlwind\\AddUser.xaml",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.003549|",
+              "WhenOpened": "2026-04-23T18:45:06.205Z"
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 7,
+              "Title": "AddUser.xaml.cs",
+              "DocumentMoniker": "C:\\Users\\Admin\\Desktop\\\u0423\u0440\u0430\u0433\u0430\u043D (Whirlwind)\\Whirlwind\\Whirlwind\\AddUser.xaml.cs",
+              "RelativeDocumentMoniker": "Whirlwind\\AddUser.xaml.cs",
+              "ToolTip": "C:\\Users\\Admin\\Desktop\\\u0423\u0440\u0430\u0433\u0430\u043D (Whirlwind)\\Whirlwind\\Whirlwind\\AddUser.xaml.cs",
+              "RelativeToolTip": "Whirlwind\\AddUser.xaml.cs",
+              "ViewState": "AgIAAAUAAAAAAAAAAAD4vxwAAAA0AAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2026-04-23T19:00:05.9Z"
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 4,
+              "Title": "EnterWindow.xaml",
+              "DocumentMoniker": "C:\\Users\\Admin\\Desktop\\\u0423\u0440\u0430\u0433\u0430\u043D (Whirlwind)\\Whirlwind\\Whirlwind\\EnterWindow.xaml",
+              "RelativeDocumentMoniker": "Whirlwind\\EnterWindow.xaml",
+              "ToolTip": "C:\\Users\\Admin\\Desktop\\\u0423\u0440\u0430\u0433\u0430\u043D (Whirlwind)\\Whirlwind\\Whirlwind\\EnterWindow.xaml",
+              "RelativeToolTip": "Whirlwind\\EnterWindow.xaml",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.003549|",
+              "WhenOpened": "2026-04-17T07:43:11.611Z"
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 6,
+              "Title": "EnterWindow.xaml.cs",
+              "DocumentMoniker": "C:\\Users\\Admin\\Desktop\\\u0423\u0440\u0430\u0433\u0430\u043D (Whirlwind)\\Whirlwind\\Whirlwind\\EnterWindow.xaml.cs",
+              "RelativeDocumentMoniker": "Whirlwind\\EnterWindow.xaml.cs",
+              "ToolTip": "C:\\Users\\Admin\\Desktop\\\u0423\u0440\u0430\u0433\u0430\u043D (Whirlwind)\\Whirlwind\\Whirlwind\\EnterWindow.xaml.cs",
+              "RelativeToolTip": "Whirlwind\\EnterWindow.xaml.cs",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAAFAAAAAAAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2026-04-17T07:44:49.777Z"
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 1,
+              "Title": "MainWindow.xaml",
+              "DocumentMoniker": "C:\\Users\\Admin\\Desktop\\\u0423\u0440\u0430\u0433\u0430\u043D (Whirlwind)\\Whirlwind\\Whirlwind\\MainWindow.xaml",
+              "RelativeDocumentMoniker": "Whirlwind\\MainWindow.xaml",
+              "ToolTip": "C:\\Users\\Admin\\Desktop\\\u0423\u0440\u0430\u0433\u0430\u043D (Whirlwind)\\Whirlwind\\Whirlwind\\MainWindow.xaml",
+              "RelativeToolTip": "Whirlwind\\MainWindow.xaml",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.003549|",
+              "WhenOpened": "2026-04-14T12:56:29.963Z"
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 0,
+              "Title": "MainWindow.xaml.cs",
+              "DocumentMoniker": "C:\\Users\\Admin\\Desktop\\\u0423\u0440\u0430\u0433\u0430\u043D (Whirlwind)\\Whirlwind\\Whirlwind\\MainWindow.xaml.cs",
+              "RelativeDocumentMoniker": "Whirlwind\\MainWindow.xaml.cs",
+              "ToolTip": "C:\\Users\\Admin\\Desktop\\\u0423\u0440\u0430\u0433\u0430\u043D (Whirlwind)\\Whirlwind\\Whirlwind\\MainWindow.xaml.cs",
+              "RelativeToolTip": "Whirlwind\\MainWindow.xaml.cs",
+              "ViewState": "AgIAAJkBAAAAAAAAAAAAwMUBAAAZAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2026-04-14T12:56:29.963Z",
+              "EditorCaption": ""
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}
