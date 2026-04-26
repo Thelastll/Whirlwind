@@ -18,6 +18,7 @@ namespace Whirlwind.Properties
     {
         internal string ip_sender = null;
         internal string port_sender = "3866";
+        internal bool window_was_opened = false;
 
         private static Settings defaultInstance = ((Settings)(global::System.Configuration.ApplicationSettingsBase.Synchronized(new Settings())));
 

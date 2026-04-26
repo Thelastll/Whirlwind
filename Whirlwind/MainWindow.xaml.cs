@@ -1,7 +1,7 @@
 ﻿using Microsoft.Data.Sqlite;
-using Microsoft.Data.Sqlite;
 using System;
 using System.Collections.Generic;
+using System.ComponentModel;
 using System.Linq;
 using System.Net;
 using System.Net.Sockets;
@@ -20,6 +20,8 @@ using System.Windows.Media;
 using System.Windows.Media.Imaging;
 using System.Windows.Navigation;
 using System.Windows.Shapes;
+using Microsoft.Toolkit.Uwp.Notifications;
+
 
 namespace Whirlwind
 {
@@ -29,8 +31,12 @@ namespace Whirlwind
         private Native.GetBytes SendErr;
         private Native.GetBytes ListenMessage;
 
-        private string SavedMessage = null;
-        private string CurrentInterlocutor = null;
+        public static string connectionString = "Data Source=../../../../Data/data.db";
+        private static string SavedMessage = null;
+        private static string CurrentInterlocutor = null;
+        string soundPath = System.IO.Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "Sounds", "multimedia-message-arrival-sound.wav");
+
+        System.Windows.Forms.NotifyIcon trayIcon = new System.Windows.Forms.NotifyIcon();
 
         public MainWindow()
         {
@@ -40,13 +46,21 @@ namespace Whirlwind
             SendOk = on_send_ok;
             SendErr = on_send_err;
             ListenMessage = on_listen_message;
+
+            change_ip_address();
+            show_tray_icon();
+
+            if (App.IsAutostart)
+            {
+                this.Hide();
+            }
         }
 
         private void on_send_ok()
         {
             Dispatcher.Invoke(() =>
             {
-                add_message_to_db(Properties.Settings.Default.ip_sender, CurrentInterlocutor, DateTime.Now.ToString("yy-M-dd-hh-mm-ss"), SavedMessage);
+                add_message_to_db(Properties.Settings.Default.ip_sender, CurrentInterlocutor, DateTime.Now.ToString("yy-M-dd-HH-mm-ss"), SavedMessage);
 
                 send_button.IsEnabled = true;
                 message.IsEnabled = true;
@@ -72,25 +86,29 @@ namespace Whirlwind
             byte[] buffer = new byte[len];
             Marshal.Copy(ptr, buffer, 0, len);
 
-            var (senderIp, seconds, message) = parse_packet(buffer);
+            var (senderIp, seconds, message) = NetworkProtocols.parse_packet(buffer);
 
-            if (senderIp == Properties.Settings.Default.ip_sender) return;
+            if (senderIp == Properties.Settings.Default.ip_sender || senderIp == "Error") return;
 
             Dispatcher.Invoke(() =>
             {
-                add_message_to_db(senderIp, Properties.Settings.Default.ip_sender, seconds.ToString(), message);
+                add_message_to_db(senderIp, Properties.Settings.Default.ip_sender, DateTime.MinValue.AddSeconds(seconds).ToString("yy-M-dd-HH-mm-ss"), message);
+                ShowMessageNotification(get_username_by_ip(senderIp), message);
             });
+        }
+
+        private void Window_Loaded(object sender, RoutedEventArgs e)
+        {
+            this.Focus();
         }
 
         private void Window_ContentRendered(object sender, EventArgs e)
         {
-            change_ip_address();
         }
 
         private void change_ip_address()
         {
             var enter_window = new EnterWindow();
-            enter_window.Owner = this;
             enter_window.ShowDialog();
             Properties.Settings.Default.ip_sender = enter_window.IpSender == null ? null : enter_window.IpSender.Trim();
 
@@ -98,8 +116,6 @@ namespace Whirlwind
                 Close();
                 return;
             }
-
-            string connectionString = "Data Source=../../../../data/data.db";
 
             using (var connection = new SqliteConnection(connectionString))
             {
@@ -114,14 +130,73 @@ namespace Whirlwind
             }
             start_listening(Properties.Settings.Default.ip_sender);
 
+            ChatTitle.Text = "Личный чат";
+            IpTitle.Text = Properties.Settings.Default.ip_sender;
+            CurrentInterlocutor = Properties.Settings.Default.ip_sender;
+
             load_users();
+            load_messages(CurrentInterlocutor);
+        }
+
+        private void ShowMessageNotification(string senderName, string text)
+        {
+            string soundPath = System.IO.Path.Combine(
+                AppDomain.CurrentDomain.BaseDirectory,
+                "data",
+                "sounds",
+                "message.wav"
+            );
+
+            ShowToast($"{senderName}", text, soundPath);
+        }
+
+        public void ShowToast(string title, string message, string soundFile = null)
+        {
+            var builder = new ToastContentBuilder().AddText(title).AddText(message);
+
+            if (soundPath != null)
+                builder.AddAudio(new Uri(soundPath));
+
+            builder.Show();
+        }
+
+        private void show_tray_icon()
+        {
+            trayIcon.Icon = new System.Drawing.Icon("../../../../Pictures/WhirlwindSilver.ico");
+
+            trayIcon.Visible = true;
+            trayIcon.Text = "Whirlwind";
+
+            System.Windows.Forms.ContextMenuStrip menu = new System.Windows.Forms.ContextMenuStrip();
+
+            menu.Items.Add("Изменить IP", null, (s, t) =>
+            {
+                change_ip_address();
+            });
+
+            menu.Items.Add("Выход", null, (s, t) =>
+            {
+                trayIcon.Visible = false;
+                System.Windows.Application.Current.Shutdown();
+            });
+
+            trayIcon.ContextMenuStrip = menu;
+
+
+            trayIcon.MouseClick += (s, t) =>
+            {
+                if (t.Button == System.Windows.Forms.MouseButtons.Left)
+                {
+                    this.Show();
+                    this.WindowState = System.Windows.WindowState.Normal;
+                    this.Activate();
+                }
+            };
         }
 
         private void load_users()
         {
             DeviceList.Items.Clear();
-
-            string connectionString = "Data Source=../../../../data/data.db";
 
             using (var connection = new SqliteConnection(connectionString))
             {
@@ -153,7 +228,6 @@ namespace Whirlwind
 
             if (ip == null) return;
 
-            string connectionString = "Data Source=../../../../data/data.db";
             string query = "";
 
             using (var connection = new SqliteConnection(connectionString))
@@ -201,6 +275,41 @@ namespace Whirlwind
             change_ip_address();
         }
 
+        private void window_KeyDown(object sender, KeyEventArgs e)
+        {
+            bool isShift = Keyboard.IsKeyDown(Key.LeftShift) || Keyboard.IsKeyDown(Key.RightShift);
+
+            if (e.Key == Key.Enter && !isShift)
+            {
+                send_button_Click(send_button, null);
+                e.Handled = true;
+            }
+
+            if (e.Key == Key.Escape)
+            {
+                this.Hide();
+                e.Handled = true;
+            }
+        }
+
+        private void message_KeyDown(object sender, KeyEventArgs e)
+        {
+            bool isShift = Keyboard.IsKeyDown(Key.LeftShift) || Keyboard.IsKeyDown(Key.RightShift);
+
+            if (e.Key == Key.Enter && isShift)
+            {
+                int caret = message.CaretIndex;
+
+                string nl = Environment.NewLine;
+
+                message.Text = message.Text.Insert(caret, nl);
+
+                message.CaretIndex = caret + nl.Length;
+
+                e.Handled = true;
+            }
+        }
+
         private void send_button_Click(object sender, RoutedEventArgs e)
         {
             if (this.message.Text.Trim() == "" || CurrentInterlocutor == null) return;
@@ -208,8 +317,8 @@ namespace Whirlwind
             send_button.IsEnabled = false;
             this.message.IsEnabled = false;
             string message = this.message.Text.Trim();
-            this.SavedMessage = message;
-            byte[] send = build_packet(0, Properties.Settings.Default.ip_sender, (long)(DateTime.UtcNow - DateTime.MinValue).TotalSeconds, message);
+            SavedMessage = message;
+            byte[] send = NetworkProtocols.build_packet_v0(0, Properties.Settings.Default.ip_sender, (long)(DateTime.UtcNow - DateTime.MinValue).TotalSeconds, message);
             this.message.Text = "";
 
             Native.send_message(CurrentInterlocutor, Properties.Settings.Default.port_sender, send, send.Length, SendOk, SendErr);
@@ -222,8 +331,6 @@ namespace Whirlwind
             add_user_window.ShowDialog();
 
             if (add_user_window.IpAddresssee == null || add_user_window.NameAddresssee == null) return;
-
-            string connectionString = "Data Source=../../../../data/data.db";
 
             using (var connection = new SqliteConnection(connectionString))
             {
@@ -257,8 +364,6 @@ namespace Whirlwind
 
                 if (add_user_window.IpAddresssee == null || add_user_window.NameAddresssee == null) return;
 
-                string connectionString = "Data Source=../../../../data/data.db";
-
                 using (var connection = new SqliteConnection(connectionString))
                 {
                     connection.Open();
@@ -289,8 +394,6 @@ namespace Whirlwind
                 string delete = "";
 
                 DeviceList.Items.Remove(device);
-
-                string connectionString = "Data Source=../../../../data/data.db";
 
                 using (var connection = new SqliteConnection(connectionString))
                 {
@@ -347,7 +450,7 @@ namespace Whirlwind
                 Margin = msg.IsMyMessage ? new Thickness(100, 0, 0, 2)
                               : new Thickness(0, 0, 100, 2),
                 CornerRadius = new CornerRadius(5),
-                Tag = msg.Id   // ← сохраняем ID сообщения
+                Tag = msg.Id
             };
 
             var text = new TextBlock
@@ -359,7 +462,6 @@ namespace Whirlwind
 
             border.Child = text;
 
-            // 🔥 Контекстное меню
             var contextMenu = new ContextMenu();
             var deleteItem = new MenuItem { Header = "Удалить" };
 
@@ -369,16 +471,12 @@ namespace Whirlwind
 
                 if (index >= 0)
                 {
-                    // 1. Удаляем из UI
                     MessagesPanel.Children.RemoveAt(index);
 
                     if (index < MessagesPanel.Children.Count)
-                        MessagesPanel.Children.RemoveAt(index); // удалить дату
+                        MessagesPanel.Children.RemoveAt(index);
 
-                    // 2. Удаляем из БД
                     int id = (int)border.Tag;
-
-                    string connectionString = "Data Source=../../../../data/data.db";
 
                     string delete = $@"DELETE FROM Message WHERE ID = {id}";
 
@@ -396,10 +494,8 @@ namespace Whirlwind
             contextMenu.Items.Add(deleteItem);
             border.ContextMenu = contextMenu;
 
-            // добавляем пузырь
             MessagesPanel.Children.Add(border);
 
-            // дата
             var dateText = new TextBlock
             {
                 Text = msg.Date,
@@ -411,7 +507,6 @@ namespace Whirlwind
 
             MessagesPanel.Children.Add(dateText);
 
-            // автоскролл
             MessagesScroll.Dispatcher.InvokeAsync(() =>
             {
                 MessagesScroll.ScrollToEnd();
@@ -420,8 +515,6 @@ namespace Whirlwind
 
         private void add_message_to_db(string sender, string addressee, string seconds, string message)
         {
-            string connectionString = "Data Source=../../../../data/data.db";
-
             using (var connection = new SqliteConnection(connectionString))
             {
                 connection.Open();
@@ -455,96 +548,27 @@ namespace Whirlwind
             load_messages(CurrentInterlocutor);
         }
 
-        private byte[] build_packet(byte version, string senderIp, long seconds, string message)
+        private string get_username_by_ip(string ip)
         {
-            byte[] senderBytes = ip_to_bytes(senderIp);
+            try
+            {
+                string query = $@"SELECT name FROM Device WHERE ip = '{ip}' LIMIT 1";
 
-            if (senderBytes == null) return null;
+                using (var connection = new Microsoft.Data.Sqlite.SqliteConnection(connectionString))
+                {
+                    connection.Open();
 
-            byte[] msgBytes = Encoding.UTF8.GetBytes(message);
-
-            byte[] packet = new byte[1 + 4 + 5 + msgBytes.Length];
-            int offset = 0;
-
-            packet[offset++] = version;
-
-            Array.Copy(senderBytes, 0, packet, offset, 4);
-            offset += 4;
-
-            byte[] secBytes = BitConverter.GetBytes(seconds);
-            if (BitConverter.IsLittleEndian)
-                Array.Reverse(secBytes);
-
-            Array.Copy(secBytes, secBytes.Length - 5, packet, offset, 5);
-            offset += 5;
-
-            Array.Copy(msgBytes, 0, packet, offset, msgBytes.Length);
-
-            return packet;
-        }
-
-        private byte[] ip_to_bytes(string ip)
-        {
-            string[] parts = ip.Split('.');
-
-            if (parts.Length != 4) return null;
-
-            byte[] bytes = new byte[4];
-
-            for (int i = 0; i < 4; i++)
-                bytes[i] = byte.Parse(parts[i]);
-
-            return bytes;
-        }
-
-        private (string SenderIp, long Seconds, string Message) parse_packet(byte[] packet)
-        {
-            int offset = 0;
-
-            byte version = packet[offset++];
-
-            switch (version) {
-                case (0):
-                    return on_parse_packet_v0(packet);
-                default:
-                    return ("", 0, "Ошибка протокола");
+                    using (var command = new Microsoft.Data.Sqlite.SqliteCommand(query, connection))
+                    {
+                        object result = command.ExecuteScalar();
+                        return result?.ToString() ?? ip;
+                    }
+                }
             }
-        }
-
-        private (string SenderIp, long Seconds, string Message) on_parse_packet_v0(byte[] packet)
-        {
-            int offset = 1;
-
-            byte b1 = packet[offset++];
-            byte b2 = packet[offset++];
-            byte b3 = packet[offset++];
-            byte b4 = packet[offset++];
-
-            string senderIp = $"{b1}.{b2}.{b3}.{b4}";
-
-            byte[] secBytes = new byte[8];
-
-            secBytes[0] = 0;
-            secBytes[1] = 0;
-            secBytes[2] = 0;
-
-            secBytes[3] = packet[offset++];
-            secBytes[4] = packet[offset++];
-            secBytes[5] = packet[offset++];
-            secBytes[6] = packet[offset++];
-            secBytes[7] = packet[offset++];
-
-            if (BitConverter.IsLittleEndian)
-                Array.Reverse(secBytes);
-
-            long seconds = BitConverter.ToInt64(secBytes, 0);
-
-            byte[] msgBytes = new byte[packet.Length - offset];
-            Array.Copy(packet, offset, msgBytes, 0, msgBytes.Length);
-
-            string message = Encoding.UTF8.GetString(msgBytes);
-
-            return (senderIp, seconds, message);
+            catch
+            {
+                return ip;
+            }
         }
     }
     public class DeviceItem

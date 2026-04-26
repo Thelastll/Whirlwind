@@ -7,7 +7,7 @@ using System.Threading.Tasks;
 
 namespace Whirlwind
 {
-    public static class Native
+    internal static class Native
     {
         [UnmanagedFunctionPointer(CallingConvention.Cdecl)]
         public delegate void GetBytes(IntPtr bytes, int len);

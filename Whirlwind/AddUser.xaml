@@ -5,7 +5,8 @@
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:local="clr-namespace:Whirlwind"
         mc:Ignorable="d"
-        Title="AddUser" Height="250" Width="450" WindowStyle="ToolWindow" WindowStartupLocation="CenterOwner">
+        Title="AddUser" Height="250" Width="450" WindowStyle="ToolWindow" WindowStartupLocation="CenterOwner"
+        KeyDown="enter_text_KeyDown" Icon="/WhirlwindSilver.ico">
     <Grid>
         <Grid.RowDefinitions>
             <RowDefinition Height="70*"/>
@@ -37,7 +38,8 @@
 
         </Grid>
 
-        <Button Grid.Row="1"
-                Content="Добавить" Click="Button_Click"/>
+        <Button x:Name="enter_button"
+                Grid.Row="1"
+                Content="Добавить" Click="enter_Click"/>
     </Grid>
 </Window>

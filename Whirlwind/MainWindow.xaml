@@ -5,7 +5,8 @@
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:local="clr-namespace:Whirlwind"
         mc:Ignorable="d"
-        Title="MainWindow" Height="450" Width="800" ContentRendered="Window_ContentRendered">
+        Title="MainWindow" Height="450" Width="800" ContentRendered="Window_ContentRendered"
+        KeyDown="window_KeyDown" Loaded="Window_Loaded" Icon="/WhirlwindSilver.ico">
     <Grid>
         <Grid.ColumnDefinitions>
             <ColumnDefinition Width="33*"/>
@@ -134,6 +135,7 @@
                 </Grid.ColumnDefinitions>
 
                 <TextBox x:Name="message"
+                         KeyDown="message_KeyDown"
                          Grid.Column="0"
                          MinHeight="40"
                          MinWidth="200"
