@@ -1,4 +1,6 @@
 C:\Users\Admin\Desktop\Ураган (Whirlwind)\Whirlwind\Whirlwind\obj\x64\Debug\Whirlwind.csproj.AssemblyReference.cache
+C:\Users\Admin\Desktop\Ураган (Whirlwind)\Whirlwind\Whirlwind\obj\x64\Debug\Interop.IWshRuntimeLibrary.dll
+C:\Users\Admin\Desktop\Ураган (Whirlwind)\Whirlwind\Whirlwind\obj\x64\Debug\Whirlwind.csproj.ResolveComReference.cache
 C:\Users\Admin\Desktop\Ураган (Whirlwind)\Whirlwind\Whirlwind\obj\x64\Debug\AddUser.g.cs
 C:\Users\Admin\Desktop\Ураган (Whirlwind)\Whirlwind\Whirlwind\obj\x64\Debug\EnterWindow.g.cs
 C:\Users\Admin\Desktop\Ураган (Whirlwind)\Whirlwind\Whirlwind\obj\x64\Debug\MainWindow.g.cs
@@ -10,7 +12,6 @@ C:\Users\Admin\Desktop\Ураган (Whirlwind)\Whirlwind\Whirlwind\bin\x64\Debu
 C:\Users\Admin\Desktop\Ураган (Whirlwind)\Whirlwind\Whirlwind\bin\x64\Debug\Whirlwind.exe
 C:\Users\Admin\Desktop\Ураган (Whirlwind)\Whirlwind\Whirlwind\bin\x64\Debug\Whirlwind.pdb
 C:\Users\Admin\Desktop\Ураган (Whirlwind)\Whirlwind\Whirlwind\bin\x64\Debug\Microsoft.Data.Sqlite.dll
-C:\Users\Admin\Desktop\Ураган (Whirlwind)\Whirlwind\Whirlwind\bin\x64\Debug\Microsoft.Toolkit.Uwp.Notifications.dll
 C:\Users\Admin\Desktop\Ураган (Whirlwind)\Whirlwind\Whirlwind\bin\x64\Debug\SQLitePCLRaw.batteries_v2.dll
 C:\Users\Admin\Desktop\Ураган (Whirlwind)\Whirlwind\Whirlwind\bin\x64\Debug\SQLitePCLRaw.core.dll
 C:\Users\Admin\Desktop\Ураган (Whirlwind)\Whirlwind\Whirlwind\bin\x64\Debug\SQLitePCLRaw.provider.dynamic_cdecl.dll
@@ -20,9 +21,8 @@ C:\Users\Admin\Desktop\Ураган (Whirlwind)\Whirlwind\Whirlwind\bin\x64\Debu
 C:\Users\Admin\Desktop\Ураган (Whirlwind)\Whirlwind\Whirlwind\bin\x64\Debug\System.Numerics.Vectors.dll
 C:\Users\Admin\Desktop\Ураган (Whirlwind)\Whirlwind\Whirlwind\bin\x64\Debug\System.Runtime.CompilerServices.Unsafe.dll
 C:\Users\Admin\Desktop\Ураган (Whirlwind)\Whirlwind\Whirlwind\bin\x64\Debug\System.ValueTuple.dll
+C:\Users\Admin\Desktop\Ураган (Whirlwind)\Whirlwind\Whirlwind\bin\x64\Debug\windows.winmd
 C:\Users\Admin\Desktop\Ураган (Whirlwind)\Whirlwind\Whirlwind\bin\x64\Debug\Microsoft.Data.Sqlite.xml
-C:\Users\Admin\Desktop\Ураган (Whirlwind)\Whirlwind\Whirlwind\bin\x64\Debug\Microsoft.Toolkit.Uwp.Notifications.pdb
-C:\Users\Admin\Desktop\Ураган (Whirlwind)\Whirlwind\Whirlwind\bin\x64\Debug\Microsoft.Toolkit.Uwp.Notifications.xml
 C:\Users\Admin\Desktop\Ураган (Whirlwind)\Whirlwind\Whirlwind\bin\x64\Debug\System.Buffers.xml
 C:\Users\Admin\Desktop\Ураган (Whirlwind)\Whirlwind\Whirlwind\bin\x64\Debug\System.Diagnostics.DiagnosticSource.xml
 C:\Users\Admin\Desktop\Ураган (Whirlwind)\Whirlwind\Whirlwind\bin\x64\Debug\System.Memory.xml

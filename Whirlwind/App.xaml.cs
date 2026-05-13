@@ -1,27 +1,20 @@
-﻿using Microsoft.Toolkit.Uwp.Notifications;
-using System;
-using System.Collections.Generic;
-using System.Configuration;
-using System.Data;
+﻿using System;
 using System.Linq;
-using System.Threading.Tasks;
 using System.Windows;
+using System.IO;
+using IWshRuntimeLibrary;
 
 namespace Whirlwind
 {
-    /// <summary>
-    /// Логика взаимодействия для App.xaml
-    /// </summary>
     public partial class App : Application
     {
         public static bool IsAutostart { get; private set; } = false;
 
+        public static MainWindow MainWindowInstance;
+
         protected override void OnStartup(StartupEventArgs e)
         {
             base.OnStartup(e);
-
-            DesktopNotificationManagerCompat.RegisterAumidAndComServer<MyNotificationActivator>("Whirlwind.App");
-            DesktopNotificationManagerCompat.RegisterActivator<MyNotificationActivator>();
 
             if (e.Args.Contains("--autostart")) IsAutostart = true;
 
@@ -32,6 +25,9 @@ namespace Whirlwind
             Environment.CurrentDirectory = exeDir;
 
             AddAutostart();
+
+            MainWindowInstance = new MainWindow();
+            MainWindowInstance.Show();
         }
 
 

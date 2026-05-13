@@ -2,6 +2,7 @@
 using System;
 using System.Collections.Generic;
 using System.ComponentModel;
+using System.IO.Ports;
 using System.Linq;
 using System.Net;
 using System.Net.Sockets;
@@ -20,13 +21,13 @@ using System.Windows.Media;
 using System.Windows.Media.Imaging;
 using System.Windows.Navigation;
 using System.Windows.Shapes;
-using Microsoft.Toolkit.Uwp.Notifications;
 
 
 namespace Whirlwind
 {
     public partial class MainWindow : Window
     {
+        private Native.PassDelegate SystemSendOk;
         private Native.PassDelegate SendOk;
         private Native.GetBytes SendErr;
         private Native.GetBytes ListenMessage;
@@ -34,7 +35,7 @@ namespace Whirlwind
         public static string connectionString = "Data Source=../../../../Data/data.db";
         private static string SavedMessage = null;
         private static string CurrentInterlocutor = null;
-        string soundPath = System.IO.Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "Sounds", "multimedia-message-arrival-sound.wav");
+        private static string CurrentSender = null;
 
         System.Windows.Forms.NotifyIcon trayIcon = new System.Windows.Forms.NotifyIcon();
 
@@ -43,24 +44,24 @@ namespace Whirlwind
             InitializeComponent();
             Native.init_module();
 
+            SystemSendOk = on_system_send_ok;
             SendOk = on_send_ok;
             SendErr = on_send_err;
             ListenMessage = on_listen_message;
 
             change_ip_address();
             show_tray_icon();
+        }
 
-            if (App.IsAutostart)
-            {
-                this.Hide();
-            }
+        private void on_system_send_ok()
+        {
         }
 
         private void on_send_ok()
         {
             Dispatcher.Invoke(() =>
             {
-                add_message_to_db(Properties.Settings.Default.ip_sender, CurrentInterlocutor, DateTime.Now.ToString("yy-M-dd-HH-mm-ss"), SavedMessage);
+                add_message_to_db(Properties.Settings.Default.ip_sender, CurrentSender, DateTime.Now.ToString("yy-M-dd-HH-mm-ss"), get_device_type(CurrentSender), 1, SavedMessage);
 
                 send_button.IsEnabled = true;
                 message.IsEnabled = true;
@@ -83,17 +84,143 @@ namespace Whirlwind
 
         private void on_listen_message(IntPtr ptr, int len)
         {
-            byte[] buffer = new byte[len];
-            Marshal.Copy(ptr, buffer, 0, len);
+            byte[] packet = new byte[len];
+            Marshal.Copy(ptr, packet, 0, len);
 
-            var (senderIp, seconds, message) = NetworkProtocols.parse_packet(buffer);
+            byte protocol_type = packet[0];
+            ushort protocol_version = (ushort)((packet[1] << 8) | packet[2]);
 
-            if (senderIp == Properties.Settings.Default.ip_sender || senderIp == "Error") return;
+            string sender_ip = $"{packet[3]}.{packet[4]}.{packet[5]}.{packet[6]}";
+
+            //uint body_length =
+            //    (uint)((packet[7] << 24) |
+            //           (packet[8] << 16) |
+            //           (packet[9] << 8) |
+            //            packet[10]);
+
+            long seconds = 0;
+            byte device_type = 0;
+            byte message_type = 0;
+            byte[] extra_data = null;
+            string message = null;
+
+            switch (protocol_type)
+            {
+                case 0:
+                    (seconds, extra_data) = NetworkProtocols.on_parse_system_packet(packet);
+                    handle_system_packet(sender_ip, protocol_version, seconds, extra_data);
+                    break;
+
+                case 1:
+                    (seconds, device_type, message_type, extra_data, message) = NetworkProtocols.on_parse_text_packet(packet);
+
+                    handle_text_packet(sender_ip, seconds, device_type, message_type, extra_data, message);
+                    break;
+
+                default:
+                    //Неизвестный тип протокола
+                    break;
+            }
+        }
+
+        void handle_system_packet(string sender_ip, ushort protocol_version, long seconds, byte[] extra_data)
+        {
+            switch (protocol_version)
+            {
+                case 0:
+                    handle_system_v0(sender_ip, seconds, extra_data);
+                    break;
+
+                default:
+                    //Неизвестный тип протокола
+                    break;
+            }
+        }
+
+        void handle_system_v0(string sender_ip, long seconds, byte[] extra_data)
+        {
+            var (action, future_type, future_version) = NetworkProtocols.on_parse_system_extra_data_v0(extra_data);
+
+            switch (action)
+            {
+                case 0:
+                    handle_system_request(sender_ip, future_type, future_version);
+                    break;
+
+                case 1:
+                    handle_system_accept(sender_ip, future_type, future_version);
+                    break;
+                default:
+                    //Неизвестная версия системного протокола
+                    break;
+            }
+        }
+
+        void handle_system_request(string sender_ip, byte future_type, ushort future_version)
+        {
+            Native.add_expected_protocol(
+                future_type,
+                future_version,
+                NetworkProtocols.ip_to_bytes(sender_ip)
+            );
+
+            byte[] handshake = NetworkProtocols.build_system_packet(
+                Properties.Settings.Default.ip_sender,
+                (long)(DateTime.Now - DateTime.MinValue).TotalSeconds,
+                NetworkProtocols.build_system_extra_data_v0(
+                    1,
+                    future_type,
+                    future_version
+                )
+            );
+
+            Native.send_message(
+                sender_ip,
+                Properties.Settings.Default.port_sender,
+                handshake,
+                handshake.Length,
+                SystemSendOk,
+                SendErr
+            );
+        }
+
+        void handle_system_accept(string sender_ip, byte future_type, ushort future_version)
+        {
+            CurrentSender = sender_ip;
+
+            byte[] send = NetworkProtocols.build_text_packet(
+                Properties.Settings.Default.ip_sender,
+                (long)(DateTime.Now - DateTime.MinValue).TotalSeconds,
+                get_device_type(sender_ip),
+                1,
+                NetworkProtocols.build_text_extra_data_v0(),
+                SavedMessage
+            );
+
+            Native.send_message(
+                sender_ip,
+                Properties.Settings.Default.port_sender,
+                send,
+                send.Length,
+                SendOk,
+                SendErr
+            );
+        }
+
+        void handle_text_packet(string sender_ip, long seconds, byte device_type, byte message_type, byte[] extra_data, string message)
+        {
+            if (sender_ip == Properties.Settings.Default.ip_sender) return;
 
             Dispatcher.Invoke(() =>
             {
-                add_message_to_db(senderIp, Properties.Settings.Default.ip_sender, DateTime.MinValue.AddSeconds(seconds).ToString("yy-M-dd-HH-mm-ss"), message);
-                ShowMessageNotification(get_username_by_ip(senderIp), message);
+                add_message_to_db(
+                    sender_ip,
+                    Properties.Settings.Default.ip_sender,
+                    DateTime.MinValue.AddSeconds(seconds).ToString("yy-M-dd-HH-mm-ss"),
+                    device_type,
+                    message_type,
+                    message
+                );
             });
         }
 
@@ -104,6 +231,10 @@ namespace Whirlwind
 
         private void Window_ContentRendered(object sender, EventArgs e)
         {
+            if (App.IsAutostart)
+            {
+                this.Hide();
+            }
         }
 
         private void change_ip_address()
@@ -136,28 +267,6 @@ namespace Whirlwind
 
             load_users();
             load_messages(CurrentInterlocutor);
-        }
-
-        private void ShowMessageNotification(string senderName, string text)
-        {
-            string soundPath = System.IO.Path.Combine(
-                AppDomain.CurrentDomain.BaseDirectory,
-                "data",
-                "sounds",
-                "message.wav"
-            );
-
-            ShowToast($"{senderName}", text, soundPath);
-        }
-
-        public void ShowToast(string title, string message, string soundFile = null)
-        {
-            var builder = new ToastContentBuilder().AddText(title).AddText(message);
-
-            if (soundPath != null)
-                builder.AddAudio(new Uri(soundPath));
-
-            builder.Show();
         }
 
         private void show_tray_icon()
@@ -316,12 +425,56 @@ namespace Whirlwind
 
             send_button.IsEnabled = false;
             this.message.IsEnabled = false;
+
             string message = this.message.Text.Trim();
             SavedMessage = message;
-            byte[] send = NetworkProtocols.build_packet_v0(0, Properties.Settings.Default.ip_sender, (long)(DateTime.UtcNow - DateTime.MinValue).TotalSeconds, message);
+
+            byte future_type = 1;
+            ushort future_version = 0;
+
+            byte[] handshake = NetworkProtocols.build_system_packet(
+                Properties.Settings.Default.ip_sender,
+                (long)(DateTime.Now - DateTime.MinValue).TotalSeconds,
+                NetworkProtocols.build_system_extra_data_v0(
+                    0,
+                    future_type,
+                    future_version
+                )
+            );
+
             this.message.Text = "";
 
-            Native.send_message(CurrentInterlocutor, Properties.Settings.Default.port_sender, send, send.Length, SendOk, SendErr);
+            Native.send_message(
+                CurrentInterlocutor,
+                Properties.Settings.Default.port_sender,
+                handshake,
+                handshake.Length,
+                SystemSendOk,
+                SendErr
+            );
+        }
+
+        private byte get_device_type(string ip)
+        {
+            try
+            {
+                string query = $@"SELECT type FROM Device WHERE ip = '{ip}' LIMIT 1";
+
+                using (var connection = new Microsoft.Data.Sqlite.SqliteConnection(connectionString))
+                {
+                    connection.Open();
+
+                    using (var command = new Microsoft.Data.Sqlite.SqliteCommand(query, connection))
+                    {
+                        object result = command.ExecuteScalar();
+                        return byte.Parse(result.ToString());
+                    }
+                }
+            }
+            catch
+            {
+                return 2;
+            }
         }
 
         private void add_user_Click(object sender, RoutedEventArgs e)
@@ -429,7 +582,6 @@ namespace Whirlwind
             if (border == null)
                 return;
 
-
             if (border.DataContext is DeviceItem device)
             {
                 int id = device.Id;
@@ -513,7 +665,7 @@ namespace Whirlwind
             }, System.Windows.Threading.DispatcherPriority.Background);
         }
 
-        private void add_message_to_db(string sender, string addressee, string seconds, string message)
+        private void add_message_to_db(string sender, string addressee, string seconds, byte device_type, byte message_type, string message)
         {
             using (var connection = new SqliteConnection(connectionString))
             {
@@ -521,11 +673,11 @@ namespace Whirlwind
 
                 string check = $@"SELECT count(*) from Device WHERE ip = '{sender}'";
 
-                string add_device = $@"INSERT INTO Device (ip, type, name) VALUES ('{sender}', 2, 'Неизвестный')";
+                string add_device = $@"INSERT INTO Device (ip, type, name) VALUES ('{sender}', '{device_type}', 'Неизвестный')";
 
                 string insert = $@"INSERT INTO Message(sender, addressee, message_type, text, date)
                                 VALUES ((SELECT ID FROM Device WHERE ip = '{sender}'), 
-                                (SELECT ID FROM Device WHERE ip = '{addressee}'), '1', '{message}', 
+                                (SELECT ID FROM Device WHERE ip = '{addressee}'), '{message_type}', '{message}', 
                                 '{seconds}')";
                 using (var command = new SqliteCommand(check, connection))
                 {

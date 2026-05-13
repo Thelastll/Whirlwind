@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Net.Sockets;
 using System.Text;
 using System.Threading.Tasks;
 
@@ -8,35 +9,12 @@ namespace Whirlwind
 {
     internal static class NetworkProtocols
     {
-        public static byte[] build_packet_v0(byte version, string senderIp, long seconds, string message)
+        public enum SystemCommand : byte
         {
-            byte[] senderBytes = ip_to_bytes(senderIp);
-
-            if (senderBytes == null) return null;
-
-            byte[] msgBytes = Encoding.UTF8.GetBytes(message);
-
-            byte[] packet = new byte[1 + 4 + 5 + msgBytes.Length];
-            int offset = 0;
-
-            packet[offset++] = version;
-
-            Array.Copy(senderBytes, 0, packet, offset, 4);
-            offset += 4;
-
-            byte[] secBytes = BitConverter.GetBytes(seconds);
-            if (BitConverter.IsLittleEndian)
-                Array.Reverse(secBytes);
-
-            Array.Copy(secBytes, secBytes.Length - 5, packet, offset, 5);
-            offset += 5;
-
-            Array.Copy(msgBytes, 0, packet, offset, msgBytes.Length);
-
-            return packet;
+            WaitForProtocol = 1
         }
 
-        private static byte[] ip_to_bytes(string ip)
+        public static byte[] ip_to_bytes(string ip)
         {
             string[] parts = ip.Split('.');
 
@@ -50,55 +28,188 @@ namespace Whirlwind
             return bytes;
         }
 
-        public static (string SenderIp, long Seconds, string Message) parse_packet(byte[] packet)
+        public static byte[] build_packet(byte protocolType, ushort protocolVersion, string senderIp, byte[] body)
         {
+            byte[] ip_bytes = ip_to_bytes(senderIp);
+            if (ip_bytes == null) return null;
+
+            uint bodyLength = (uint)body.Length;
+
+            byte[] packet = new byte[11 + body.Length];
             int offset = 0;
 
-            byte version = packet[offset++];
+            packet[offset++] = protocolType;
 
-            switch (version)
-            {
-                case (0):
-                    return on_parse_packet_v0(packet);
-                default:
-                    return ("Error", 0, "Ошибка протокола");
-            }
+            packet[offset++] = (byte)(protocolVersion >> 8);
+            packet[offset++] = (byte)(protocolVersion & 0xFF);
+
+            Array.Copy(ip_bytes, 0, packet, offset, 4);
+            offset += 4;
+
+            packet[offset++] = (byte)(bodyLength >> 24);
+            packet[offset++] = (byte)(bodyLength >> 16);
+            packet[offset++] = (byte)(bodyLength >> 8);
+            packet[offset++] = (byte)(bodyLength & 0xFF);
+
+            Array.Copy(body, 0, packet, offset, body.Length);
+
+            return packet;
         }
 
-        private static (string SenderIp, long Seconds, string Message) on_parse_packet_v0(byte[] packet)
+        public static (ushort, byte[]) build_system_extra_data_v0(byte action, byte future_type, ushort future_version)
         {
-            int offset = 1;
+            byte[] data = new byte[4];
 
-            byte b1 = packet[offset++];
-            byte b2 = packet[offset++];
-            byte b3 = packet[offset++];
-            byte b4 = packet[offset++];
+            data[0] = action;
+            data[1] = future_type;
 
-            string senderIp = $"{b1}.{b2}.{b3}.{b4}";
+            data[2] = (byte)(future_version >> 8);
+            data[3] = (byte)(future_version & 0xFF);
+
+            return (0, data);
+        }
+
+        public static byte[] build_system_packet(string senderIp, long seconds, (ushort protocol_version, byte[] data) extra)
+        {
+            if (extra.data == null)
+                extra.data = Array.Empty<byte>();
+
+            byte[] secBytes = BitConverter.GetBytes(seconds);
+            if (BitConverter.IsLittleEndian)
+                Array.Reverse(secBytes);
+
+            byte[] body = new byte[5 + extra.data.Length];
+            int offset = 0;
+
+            // seconds (5 bytes)
+            Array.Copy(secBytes, secBytes.Length - 5, body, offset, 5);
+            offset += 5;
+
+            // extra_data
+            Array.Copy(extra.data, 0, body, offset, extra.data.Length);
+
+            return build_packet(protocolType: 0, protocolVersion: extra.protocol_version, senderIp: senderIp, body: body);
+        }
+
+        public static (ushort, byte[]) build_text_extra_data_v0()
+        {
+            return (0, null);
+        }
+
+        public static byte[] build_text_packet(string senderIp, long seconds, byte device_type, byte message_type, (ushort protocol_version, byte[] data) extra, string message)
+        {
+            if (extra.data == null)
+                extra.data = Array.Empty<byte>();
+
+            byte[] msgBytes = Encoding.UTF8.GetBytes(message);
+
+            int headerInsideBody = 5 + 1 + 2;
+            int bodySize = headerInsideBody + extra.data.Length + msgBytes.Length;
+
+            byte[] body = new byte[bodySize];
+            int offset = 0;
+
+            byte[] secBytes = BitConverter.GetBytes(seconds);
+            if (BitConverter.IsLittleEndian)
+                Array.Reverse(secBytes);
+            Array.Copy(secBytes, secBytes.Length - 5, body, offset, 5);
+            offset += 5;
+
+            byte combined = (byte)((device_type << 5) | (message_type & 0b11111));
+            body[offset++] = combined;
+
+            ushort msgOffset = (ushort)(headerInsideBody + extra.data.Length);
+            body[offset++] = (byte)(msgOffset >> 8);
+            body[offset++] = (byte)(msgOffset & 0xFF);
+
+            Array.Copy(extra.data, 0, body, offset, extra.data.Length);
+            offset += extra.data.Length;
+
+            Array.Copy(msgBytes, 0, body, offset, msgBytes.Length);
+
+            return build_packet(
+                protocolType: 1,
+                protocolVersion: extra.protocol_version,
+                senderIp: senderIp,
+                body: body
+            );
+        }
+
+        public static (byte action, byte future_type, ushort future_version) on_parse_system_extra_data_v0(byte[] extra_data)
+        {
+            if (extra_data == null || extra_data.Length < 4)
+                return (0, 0, 0);
+
+            byte action = extra_data[0];
+            byte future_type = extra_data[1];
+            ushort future_version = (ushort)((extra_data[2] << 8) | extra_data[3]);
+
+            return (action, future_type, future_version);
+        }
+
+
+        public static (long seconds, byte[] extra_data) on_parse_system_packet(byte[] packet)
+        {
+            int offset = 11;
 
             byte[] secBytes = new byte[8];
-
-            secBytes[0] = 0;
-            secBytes[1] = 0;
-            secBytes[2] = 0;
-
-            secBytes[3] = packet[offset++];
-            secBytes[4] = packet[offset++];
-            secBytes[5] = packet[offset++];
-            secBytes[6] = packet[offset++];
-            secBytes[7] = packet[offset++];
+            secBytes[0] = secBytes[1] = secBytes[2] = 0;
+            Array.Copy(packet, offset, secBytes, 3, 5);
+            offset += 5;
 
             if (BitConverter.IsLittleEndian)
                 Array.Reverse(secBytes);
 
             long seconds = BitConverter.ToInt64(secBytes, 0);
 
-            byte[] msgBytes = new byte[packet.Length - offset];
-            Array.Copy(packet, offset, msgBytes, 0, msgBytes.Length);
+            int extraLen = packet.Length - offset;
+            byte[] extra_data = new byte[extraLen];
+            Array.Copy(packet, offset, extra_data, 0, extraLen);
+
+            return (seconds, extra_data);
+        }
+
+        public static (long seconds, byte device_type, byte message_type, byte[] extra_data, string Message) on_parse_text_packet(byte[] packet)
+        {
+            int offset = 11;
+
+            byte[] secBytes = new byte[8];
+            secBytes[0] = secBytes[1] = secBytes[2] = 0;
+            Array.Copy(packet, offset, secBytes, 3, 5);
+            offset += 5;
+
+            if (BitConverter.IsLittleEndian)
+                Array.Reverse(secBytes);
+
+            long seconds = BitConverter.ToInt64(secBytes, 0);
+
+            byte combined = packet[offset++];
+            byte device_type = (byte)(combined >> 5);
+            byte message_type = (byte)(combined & 0b11111);
+
+            ushort msgOffset =
+                (ushort)((packet[offset++] << 8) | packet[offset++]);
+
+            int extraLen = msgOffset - offset;
+            if (extraLen < 0) extraLen = 0;
+
+            byte[] extra_data = new byte[extraLen];
+            if (extraLen > 0)
+                Array.Copy(packet, offset, extra_data, 0, extraLen);
+
+            offset += extraLen;
+
+            int msgStart = 11 + msgOffset;
+            int msgLen = packet.Length - msgStart;
+            if (msgLen < 0) msgLen = 0;
+
+            byte[] msgBytes = new byte[msgLen];
+            if (msgLen > 0)
+                Array.Copy(packet, msgStart, msgBytes, 0, msgLen);
 
             string message = Encoding.UTF8.GetString(msgBytes);
 
-            return (senderIp, seconds, message);
+            return (seconds, device_type, message_type, extra_data, message);
         }
     }
 }

@@ -102,37 +102,6 @@ namespace Whirlwind
             
         }
 
-        private bool WaitForDatabase(string dbPath, int timeoutMs = 5000)
-        {
-            var start = DateTime.Now;
-
-            while ((DateTime.Now - start).TotalMilliseconds < timeoutMs)
-            {
-                try
-                {
-                    using (var conn = new SqliteConnection(connectionString))
-                    {
-
-                        conn.Open();
-                        MessageBox.Show(connectionString);
-
-                        conn.Close();
-
-
-
-                        return true;
-
-                    }
-                }
-                catch
-                {
-                    System.Threading.Thread.Sleep(200);
-                }
-            }
-
-            return false;
-        }
-
         private void enter_text_KeyDown(object sender, KeyEventArgs e)
         {
             if (e.Key == Key.Enter)
@@ -144,14 +113,22 @@ namespace Whirlwind
 
         private void enter_Click(object sender, RoutedEventArgs e)
         {
-            enter_button.IsEnabled = false;
+            try
+            {
+                enter_button.IsEnabled = false;
 
-            Native.test_ip_port_sender(
-                ip.Text == "" ? "_" : ip.Text,
-                Properties.Settings.Default.port_sender,
-                SendOk,
-                SendErr
-            );
+                Native.test_ip_port_sender(
+                    ip.Text == "" ? "_" : ip.Text,
+                    Properties.Settings.Default.port_sender,
+                    SendOk,
+                    SendErr
+                );
+            }
+            catch
+            {
+                enter_button.IsEnabled = false;
+                MessageBox.Show("Ошибка ввода!");
+            }
         }
 
         private void Window_Closing(object sender, System.ComponentModel.CancelEventArgs e)

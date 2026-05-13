@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Net.Sockets;
 using System.Runtime.InteropServices;
 using System.Text;
 using System.Threading.Tasks;
@@ -22,6 +23,12 @@ namespace Whirlwind
 
         //[DllImport(Dll, CallingConvention = CallingConvention.Cdecl)]
         //public static extern void init_callback_thread();
+
+        [DllImport(Dll, CallingConvention = CallingConvention.Cdecl)]
+        public static extern void add_expected_protocol(byte protocol_type, ushort protocol_version, byte[] ip);
+
+        [DllImport(Dll, CallingConvention = CallingConvention.Cdecl)]
+        public static extern void remove_expected_protocol(byte protocol_type, ushort protocol_version, byte[] ip);
 
         [DllImport(Dll, CallingConvention = CallingConvention.Cdecl)]
         public static extern void free_rust(IntPtr ptr, int len);
