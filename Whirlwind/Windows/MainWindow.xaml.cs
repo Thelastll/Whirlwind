@@ -1,29 +1,19 @@
-﻿using Microsoft.Data.Sqlite;
+﻿using Microsoft.Toolkit.Uwp.Notifications;
+using NAudio.CoreAudioApi;
 using System;
 using System.Collections.Generic;
 using System.ComponentModel;
 using System.IO;
-using System.IO.Ports;
 using System.Linq;
-using System.Net;
-using System.Net.Sockets;
 using System.Runtime.InteropServices;
-using System.Runtime.InteropServices.ComTypes;
-using System.Runtime.Remoting.Messaging;
 using System.Text;
-using System.Text.RegularExpressions;
-using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Controls;
-using System.Windows.Controls.Primitives;
-using System.Windows.Data;
 using System.Windows.Documents;
 using System.Windows.Input;
-using System.Windows.Markup;
 using System.Windows.Media;
 using System.Windows.Media.Imaging;
-using System.Windows.Navigation;
-using System.Windows.Shapes;
+using Whirlwind.Classes;
 using Whirlwind.Views;
 
 
@@ -36,18 +26,31 @@ namespace Whirlwind
         private Native.GetBytes SendErr;
         private Native.GetBytes ListenMessage;
 
+        public enum NotificationMode
+        {
+            Normal,
+            Muted,
+            Disabled,
+            SoundOnly
+        }
+
         private static List<(byte type, ushort version, byte[] extra_data, string message, string ip_addressee)> SavedMessages = 
             new List<(byte, ushort, byte[], string, string)>();
-        private static string CurrentInterlocutor = null;
+        public string CurrentInterlocutor = null;
         private readonly List<string> attachedFiles = new List<string>();
 
         System.Windows.Forms.NotifyIcon trayIcon = new System.Windows.Forms.NotifyIcon();
 
         private bool FullClose = false;
 
+        private NotificationMode current_muted_mode = NotificationMode.Normal;
+
         public MainWindow()
         {
             InitializeComponent();
+
+            this.Icon = new BitmapImage(new Uri(System.IO.Path.Combine(AppContext.BaseDirectory, "Pictures", "WhirlWindSilverMini.ico")));
+
             Native.init_module();
 
             SystemSendOk = on_system_send_ok;
@@ -109,17 +112,18 @@ namespace Whirlwind
                     (seconds, device_type, message_type, extra_data, message) = NetworkProtocols.on_parse_text_packet(packet);
                     handle_text_packet(sender_ip, seconds, device_type, message_type, extra_data, message);
                     Native.remove_expected_protocol(protocol_type, protocol_version, NetworkProtocols.ip_to_bytes(sender_ip));
+                    ShowNotification.ShowToast(QueryToSQL.get_username_by_ip(sender_ip), message, QueryToSQL.get_device_by_ip(sender_ip), QueryToSQL.get_device_muted(sender_ip));
                     break;
                 case 2:
                     (seconds, device_type, message_type, extra_data, fileName, fileContent) = NetworkProtocols.on_parse_file_packet(packet);
                     handle_file_packet(sender_ip, seconds, device_type, message_type, extra_data, fileName, fileContent);
                     Native.remove_expected_protocol(protocol_type, protocol_version, NetworkProtocols.ip_to_bytes(sender_ip));
+                    ShowNotification.ShowToast(QueryToSQL.get_username_by_ip(sender_ip), fileName, QueryToSQL.get_device_by_ip(sender_ip), QueryToSQL.get_device_muted(sender_ip));
                     break;
                 default:
                     //Неизвестный тип протокола
                     break;
             }
-            
         }
 
         void handle_system_packet(string sender_ip, ushort protocol_version, long seconds, byte[] extra_data)
@@ -246,8 +250,6 @@ namespace Whirlwind
 
         void handle_text_packet(string sender_ip, long seconds, byte device_type, byte message_type, byte[] extra_data, string message)
         {
-            if (sender_ip == Properties.Settings.Default.ip_sender) return;
-
             Dispatcher.Invoke(() =>
             {
                 add_message_to_db(
@@ -263,16 +265,14 @@ namespace Whirlwind
 
         void handle_file_packet(string sender_ip, long seconds, byte device_type, byte message_type, byte[] extra_data, string fileName, byte[] fileContent)
         {
-            if (sender_ip == Properties.Settings.Default.ip_sender) return;
-
             Dispatcher.Invoke(() =>
             {
                 string username = QueryToSQL.get_username_by_ip(sender_ip);
-                string dir = $"../../../../Files/{username}";
+                string dir = $"Files/{username}";
 
                 Directory.CreateDirectory(dir);
 
-                string finalName = GetUniqueFileName(dir, fileName);
+                string finalName = get_unique_file_name(dir, fileName);
 
                 File.WriteAllBytes(System.IO.Path.Combine(dir, finalName), fileContent);
 
@@ -299,6 +299,7 @@ namespace Whirlwind
                 this.Hide();
             }
         }
+
         private void Window_Closing(object sender, CancelEventArgs e)
         {
             if (FullClose)
@@ -312,6 +313,114 @@ namespace Whirlwind
             }
         }
 
+        private void MainWindow_PreviewKeyDown(object sender, KeyEventArgs e)
+        {
+            bool isShift = Keyboard.IsKeyDown(Key.LeftShift) || Keyboard.IsKeyDown(Key.RightShift);
+            if (Keyboard.Modifiers == ModifierKeys.Control && e.Key == Key.V)
+            {
+                e.Handled = true;
+                handle_paste_action();
+                return;
+            }
+
+            if (!message.IsKeyboardFocusWithin)
+                return;
+
+            if (e.Key == Key.Enter && isShift)
+            {
+                int caret = message.CaretIndex;
+                string nl = Environment.NewLine;
+
+                message.Text = message.Text.Insert(caret, nl);
+                message.CaretIndex = caret + nl.Length;
+
+                e.Handled = true;
+                return;
+            }
+
+            if (e.Key == Key.Enter && !isShift)
+            {
+                e.Handled = true;
+                send_button_Click(send_button, new RoutedEventArgs());
+                return;
+            }
+        }
+
+        private void handle_paste_action()
+        {
+            if (Clipboard.ContainsFileDropList())
+            {
+                var files = Clipboard.GetFileDropList();
+                foreach (string file in files)
+                {
+                    attachedFiles.Add(file);
+                }
+
+                refresh_attached_files_list();
+                return;
+            }
+
+            if (Clipboard.ContainsImage())
+            {
+                try
+                {
+                    var image = Clipboard.GetImage();
+                    if (image != null)
+                    {
+                        string username = QueryToSQL.get_username_by_ip(CurrentInterlocutor);
+
+                        string dir = System.IO.Path.GetFullPath(
+                            $"Files/{username}"
+                        );
+
+                        if (!Directory.Exists(dir))
+                            Directory.CreateDirectory(dir);
+
+                        string filePath = System.IO.Path.Combine(
+                            dir,
+                            $"clipboard_image_{DateTime.Now:yyyyMMdd_HHmmss}.png"
+                        );
+
+                        using (var fileStream = new FileStream(filePath, FileMode.Create))
+                        {
+                            var encoder = new PngBitmapEncoder();
+                            encoder.Frames.Add(BitmapFrame.Create(image));
+                            encoder.Save(fileStream);
+                        }
+
+                        attachedFiles.Add(filePath);
+                        refresh_attached_files_list();
+                        return;
+                    }
+                }
+                catch (Exception ex)
+                {
+                    MessageBox.Show($"Ошибка при вставке изображения:\n{ex.Message}",
+                                    "Ошибка",
+                                    MessageBoxButton.OK,
+                                    MessageBoxImage.Error);
+                }
+            }
+
+            if (Clipboard.ContainsText())
+            {
+                string text = Clipboard.GetText();
+                message.Text += text;
+                message.CaretIndex = message.Text.Length;
+            }
+        }
+
+        private void Window_KeyDown(object sender, KeyEventArgs e)
+        {
+            bool isShift = Keyboard.IsKeyDown(Key.LeftShift) || Keyboard.IsKeyDown(Key.RightShift);
+
+            if (e.Key == Key.Enter && !isShift)
+            {
+                send_button_Click(send_button, null);
+                e.Handled = true;
+            }
+        }
+
         private void change_ip_address()
         {
             var enter_window = new EnterWindow();
@@ -320,7 +429,8 @@ namespace Whirlwind
 
             if (Properties.Settings.Default.ip_sender == null) {
                 FullClose = true;
-                Close();
+                trayIcon.Visible = false;
+                System.Windows.Application.Current.Shutdown();
                 return;
             }
 
@@ -338,7 +448,7 @@ namespace Whirlwind
 
         private void show_tray_icon()
         {
-            trayIcon.Icon = new System.Drawing.Icon("../../../../Pictures/WhirlwindSilver.ico");
+            trayIcon.Icon = new System.Drawing.Icon("Pictures/WhirlwindSilverMini.ico");
 
             trayIcon.Visible = true;
             trayIcon.Text = "Whirlwind";
@@ -381,7 +491,7 @@ namespace Whirlwind
             }
         }
 
-        private void load_messages(string ip)
+        public void load_messages(string ip)
         {
             MessagesPanel.Children.Clear();
 
@@ -417,35 +527,6 @@ namespace Whirlwind
             change_ip_address();
         }
 
-        private void window_KeyDown(object sender, KeyEventArgs e)
-        {
-            bool isShift = Keyboard.IsKeyDown(Key.LeftShift) || Keyboard.IsKeyDown(Key.RightShift);
-
-            if (e.Key == Key.Enter && !isShift)
-            {
-                send_button_Click(send_button, null);
-                e.Handled = true;
-            }
-        }
-
-        private void message_KeyDown(object sender, KeyEventArgs e)
-        {
-            bool isShift = Keyboard.IsKeyDown(Key.LeftShift) || Keyboard.IsKeyDown(Key.RightShift);
-
-            if (e.Key == Key.Enter && isShift)
-            {
-                int caret = message.CaretIndex;
-
-                string nl = Environment.NewLine;
-
-                message.Text = message.Text.Insert(caret, nl);
-
-                message.CaretIndex = caret + nl.Length;
-
-                e.Handled = true;
-            }
-        }
-
         private void send_button_Click(object sender, RoutedEventArgs e)
         {
             bool hasText = !string.IsNullOrWhiteSpace(this.message.Text);
@@ -454,61 +535,90 @@ namespace Whirlwind
             if (CurrentInterlocutor == null)
                 return;
 
-            if (hasText)
+            if (CurrentInterlocutor == Properties.Settings.Default.ip_sender)
             {
-
-                string textMessage = hasText ? this.message.Text.Trim() : "";
-
-                (ushort version, byte[] extra) textExtra = NetworkProtocols.build_text_extra_data_v0();
-
-                SavedMessages.Add((1, textExtra.version, textExtra.extra, textMessage, CurrentInterlocutor));
-
-                byte[] handshake = NetworkProtocols.build_system_packet(
-                    Properties.Settings.Default.ip_sender,
-                    (long)(DateTime.Now - DateTime.MinValue).TotalSeconds,
-                    NetworkProtocols.build_system_extra_data_v0(
-                        0,
-                        1,
-                        textExtra.version
-                    )
-                );
-
-                Native.send_message(
-                    CurrentInterlocutor,
-                    Properties.Settings.Default.port_sender,
-                    handshake,
-                    handshake.Length,
-                    SystemSendOk,
-                    SendErr
-                );
-            }
-
-            if (hasFiles)
-            {
-                foreach (var filePath in attachedFiles)
+                if (hasText)
                 {
-                    (ushort version, byte[] extra) fileExtra = NetworkProtocols.build_text_extra_data_v0();
+                    add_message_to_db(
+                    Properties.Settings.Default.ip_sender,
+                    Properties.Settings.Default.ip_sender,
+                    DateTime.Now.ToString("yy-M-dd-HH-mm-ss"),
+                    1,
+                    1,
+                    this.message.Text.Trim());
+                }
 
-                    byte[] fileHandshake = NetworkProtocols.build_system_packet(
+                if (hasFiles)
+                {
+                    foreach (var filePath in attachedFiles)
+                    {
+                        add_message_to_db(
+                       Properties.Settings.Default.ip_sender,
+                       Properties.Settings.Default.ip_sender,
+                       DateTime.Now.ToString("yy-M-dd-HH-mm-ss"),
+                       1,
+                       2,
+                       filePath);
+                    }
+                }
+            }
+            else
+            {
+                if (hasText)
+                {
+                    string textMessage = this.message.Text.Trim();
+
+                    (ushort version, byte[] extra) textExtra = NetworkProtocols.build_text_extra_data_v0();
+
+                    SavedMessages.Add((1, textExtra.version, textExtra.extra, textMessage, CurrentInterlocutor));
+
+                    byte[] handshake = NetworkProtocols.build_system_packet(
                         Properties.Settings.Default.ip_sender,
                         (long)(DateTime.Now - DateTime.MinValue).TotalSeconds,
                         NetworkProtocols.build_system_extra_data_v0(
                             0,
-                            2,
-                            fileExtra.version
+                            1,
+                            textExtra.version
                         )
                     );
-
-                    SavedMessages.Add((2, fileExtra.version, fileExtra.extra, filePath, CurrentInterlocutor));
 
                     Native.send_message(
                         CurrentInterlocutor,
                         Properties.Settings.Default.port_sender,
-                        fileHandshake,
-                        fileHandshake.Length,
+                        handshake,
+                        handshake.Length,
                         SystemSendOk,
                         SendErr
                     );
+                }
+
+                if (hasFiles)
+                {
+                    foreach (var filePath in attachedFiles)
+                    {
+                        (ushort version, byte[] extra) fileExtra = NetworkProtocols.build_text_extra_data_v0();
+
+                        byte[] fileHandshake = NetworkProtocols.build_system_packet(
+                            Properties.Settings.Default.ip_sender,
+                            (long)(DateTime.Now - DateTime.MinValue).TotalSeconds,
+                            NetworkProtocols.build_system_extra_data_v0(
+                                0,
+                                2,
+                                fileExtra.version
+                            )
+                        );
+
+                        SavedMessages.Add((2, fileExtra.version, fileExtra.extra, filePath, CurrentInterlocutor));
+
+                        Native.send_message(
+                            CurrentInterlocutor,
+                            Properties.Settings.Default.port_sender,
+                            fileHandshake,
+                            fileHandshake.Length,
+                            SystemSendOk,
+                            SendErr
+                        );
+                    }
                 }
             }
 
@@ -548,7 +658,7 @@ namespace Whirlwind
                 try
                 {
                     string username = QueryToSQL.get_username_by_ip(device.Ip);
-                    string dir = System.IO.Path.GetFullPath($"../../../../Files/{username}");
+                    string dir = System.IO.Path.GetFullPath($"Files/{username}");
 
                     if (Directory.Exists(dir))
                         Directory.Delete(dir, true);
@@ -582,12 +692,16 @@ namespace Whirlwind
 
             if (border.DataContext is DeviceItem device)
             {
-                int id = device.Id;
                 ChatTitle.Text = device.Name;
                 IpTitle.Text = device.Ip;
                 CurrentInterlocutor = device.Ip;
                 load_messages(device.Ip);
+
+                change_muted_mode(device.Ip);
             }
+
+            if (CurrentInterlocutor == Properties.Settings.Default.ip_sender) mute_button.Visibility = Visibility.Collapsed;
+            else mute_button.Visibility = Visibility.Visible;
         }
 
         private void control_messages(ChatMessage msg)
@@ -624,7 +738,7 @@ namespace Whirlwind
                 {
                     string username = QueryToSQL.get_username_by_ip(CurrentInterlocutor);
                     filePath = System.IO.Path.GetFullPath(
-                        $"../../../../Files/{username}/{msg.DisplayText}"
+                        $"Files/{username}/{msg.DisplayText}"
                     );
                     fileNameOnly = msg.DisplayText;
                 }
@@ -749,12 +863,54 @@ namespace Whirlwind
             }
             else
             {
-                content = new TextBlock
+                var textBlock = new TextBlock
                 {
-                    Text = msg.DisplayText,
                     Foreground = Brushes.White,
                     TextWrapping = TextWrapping.Wrap
                 };
+
+                string[] parts = msg.DisplayText.Split(' ');
+                foreach (string part in parts)
+                {
+                    if (part.StartsWith("http://", StringComparison.OrdinalIgnoreCase) || part.StartsWith("https://", StringComparison.OrdinalIgnoreCase))
+                    {
+                        var hyperlink = new Hyperlink(new Run(part))
+                        {
+                            NavigateUri = new Uri(part),
+                            Foreground = msg.IsMyMessage
+                                ? Brushes.LightGray
+                                : Brushes.DeepSkyBlue
+                        };
+
+                    hyperlink.RequestNavigate += (s, e) =>
+                        {
+                            try
+                            {
+                                System.Diagnostics.Process.Start(new System.Diagnostics.ProcessStartInfo
+                                {
+                                    FileName = e.Uri.AbsoluteUri,
+                                    UseShellExecute = true
+                                });
+                            }
+                            catch (Exception ex)
+                            {
+                                MessageBox.Show("Не удалось открыть ссылку:\n" + ex.Message,
+                                                "Ошибка",
+                                                MessageBoxButton.OK,
+                                                MessageBoxImage.Error);
+                            }
+                        };
+
+                        textBlock.Inlines.Add(hyperlink);
+                    }
+                    else
+                    {
+                        textBlock.Inlines.Add(new Run(part + " "));
+                    }
+                }
+
+                content = textBlock;
+
             }
 
             border.Child = content;
@@ -836,12 +992,21 @@ namespace Whirlwind
 
                     QueryToSQL.delete_message((int)border.Tag);
 
-                    if (msg.MessageType == 2 && !System.IO.Path.IsPathRooted(msg.DisplayText))
+                    if (msg.MessageType == 2)
                     {
                         try
                         {
-                            if (File.Exists(filePath))
-                                File.Delete(filePath);
+                            string username = QueryToSQL.get_username_by_ip(CurrentInterlocutor);
+
+                            string userDir = System.IO.Path.GetFullPath(
+                                $"Files/{username}"
+                            );
+
+                            if (filePath.StartsWith(userDir, StringComparison.OrdinalIgnoreCase))
+                            {
+                                if (File.Exists(filePath))
+                                    File.Delete(filePath);
+                            }
                         }
                         catch (Exception ex)
                         {
@@ -853,6 +1018,7 @@ namespace Whirlwind
                             );
                         }
                     }
+
                 }
             };
 
@@ -957,7 +1123,7 @@ namespace Whirlwind
             }
         }
 
-        private string GetUniqueFileName(string directory, string fileName)
+        private string get_unique_file_name(string directory, string fileName)
         {
             string name = System.IO.Path.GetFileNameWithoutExtension(fileName);
             string ext = System.IO.Path.GetExtension(fileName);
@@ -975,5 +1141,78 @@ namespace Whirlwind
 
             return System.IO.Path.GetFileName(fullPath);
         }
+
+        private void settings_button_Click(object sender, RoutedEventArgs e)
+        {
+            var settings = new Windows.Settings();
+            settings.ShowDialog();
+        }
+
+        private void mute_button_Click(object sender, RoutedEventArgs e)
+        {
+            switch (current_muted_mode)
+            {
+                // 🔊 → 🔇
+                case NotificationMode.Normal:
+                    current_muted_mode = NotificationMode.Muted;
+                    QueryToSQL.set_device_muted(CurrentInterlocutor, 1);
+                    mute_button.Content = "🔇";
+                    mute_button.ToolTip = "Уведомления заглушены";
+                    break;
+
+                // 🔇 → 🔔
+                case NotificationMode.Muted:
+                    current_muted_mode = NotificationMode.SoundOnly;
+                    QueryToSQL.set_device_muted(CurrentInterlocutor, 2);
+                    mute_button.Content = "🔔";
+                    mute_button.ToolTip = "Только звуки включены";
+                    break;
+
+                // 🔔 → 🚫
+                case NotificationMode.SoundOnly:
+                    current_muted_mode = NotificationMode.Disabled;
+                    QueryToSQL.set_device_muted(CurrentInterlocutor, 3);
+                    mute_button.Content = "🚫";
+                    mute_button.ToolTip = "Уведомления отключены";
+                    break;
+
+                // 🚫 → 🔊
+                case NotificationMode.Disabled:
+                    current_muted_mode = NotificationMode.Normal;
+                    QueryToSQL.set_device_muted(CurrentInterlocutor, 0);
+                    mute_button.Content = "🔊";
+                    mute_button.ToolTip = "Уведомления включены";
+                    break;
+            }
+        }
+
+        public void change_muted_mode(string ip)
+        {
+            switch (QueryToSQL.get_device_muted(ip))
+            {
+                case 0:
+                    current_muted_mode = NotificationMode.Normal;
+                    mute_button.Content = "🔊";
+                    mute_button.ToolTip = "Уведомления включены";
+                    break;
+                case 1:
+                    current_muted_mode = NotificationMode.Muted;
+                    mute_button.Content = "🔇";
+                    mute_button.ToolTip = "Уведомления заглушены";
+                    break;
+                case 2:
+                    current_muted_mode = NotificationMode.SoundOnly;
+                    QueryToSQL.set_device_muted(CurrentInterlocutor, 2);
+                    mute_button.Content = "🔔";
+                    mute_button.ToolTip = "Только звуки включены";
+                    break;
+                case 3:
+                    current_muted_mode = NotificationMode.Disabled;
+                    mute_button.Content = "🚫";
+                    mute_button.ToolTip = "Уведомления отключены";
+                    break;
+            }
+        }
+
     }
 }

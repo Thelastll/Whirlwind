@@ -8,6 +8,8 @@
 // </auto-generated>
 //------------------------------------------------------------------------------
 
+using System.Configuration;
+
 namespace Whirlwind.Properties
 {
 
@@ -19,7 +21,16 @@ namespace Whirlwind.Properties
         internal string ip_sender = null;
         internal string port_sender = "3866";
         internal bool window_was_opened = false;
-        internal string connectionString = "Data Source=../../../../Data/data.db";
+        internal string connection_string = "Data Source=Data/data.db";
+
+        [UserScopedSetting]
+        [DefaultSettingValue("0.5")]
+        public float Volume
+        {
+            get => (float)this["Volume"];
+            set => this["Volume"] = value;
+        }
+
 
         private static Settings defaultInstance = ((Settings)(global::System.Configuration.ApplicationSettingsBase.Synchronized(new Settings())));
 

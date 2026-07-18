@@ -6,7 +6,8 @@
         xmlns:local="clr-namespace:Whirlwind"
         mc:Ignorable="d"
         Title="AddUser" Height="250" Width="450" WindowStyle="ToolWindow" WindowStartupLocation="CenterOwner"
-        KeyDown="enter_text_KeyDown" Icon="/WhirlwindSilver.ico">
+        KeyDown="enter_text_KeyDown">
+    <!-- ="WhirlWindSilverMini.ico"> -->
     <Grid>
         <Grid.RowDefinitions>
             <RowDefinition Height="70*"/>

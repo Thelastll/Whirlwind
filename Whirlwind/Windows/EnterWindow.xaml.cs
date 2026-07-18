@@ -1,20 +1,9 @@
 ﻿using Microsoft.Data.Sqlite;
 using System;
-using System.Collections.Generic;
-using System.Data.SqlClient;
-using System.Linq;
 using System.Runtime.InteropServices;
-using System.Runtime.Remoting.Messaging;
 using System.Text;
-using System.Threading.Tasks;
 using System.Windows;
-using System.Windows.Controls;
-using System.Windows.Data;
-using System.Windows.Documents;
 using System.Windows.Input;
-using System.Windows.Media;
-using System.Windows.Media.Imaging;
-using System.Windows.Shapes;
 
 namespace Whirlwind
 {
@@ -25,8 +14,6 @@ namespace Whirlwind
     {
         private Native.GetBytes SendOk;
         private Native.GetBytes SendErr;
-
-        public static string connectionString = "Data Source=../../../../data/data.db";
         public string IpSender { get; private set; } = null;
         private bool ChangeButtonClicked = false;
 
@@ -75,11 +62,9 @@ namespace Whirlwind
         {
             if (!Properties.Settings.Default.window_was_opened)
             {
-                //if (WaitForDatabase(connectionString)) 
-                //{
                     string get_ip = $@"SELECT ip FROM Device WHERE type = '1'";
 
-                    using (var connection = new SqliteConnection(connectionString))
+                    using (var connection = new SqliteConnection(Properties.Settings.Default.connection_string))
                     {
                         connection.Open();
 
@@ -87,16 +72,12 @@ namespace Whirlwind
                         using (var reader = command.ExecuteReader())
                         {
                             reader.Read();
+                            if (reader.GetString(0) == "_") return;
                             ip.Text = reader.GetString(0);
                         }
                     }
 
                     enter_Click(enter_button, null);
-                //}
-                //else
-                //{
-                //    Close();
-                //}
                 Properties.Settings.Default.window_was_opened = true;
             }
             

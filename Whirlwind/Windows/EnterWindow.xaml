@@ -6,7 +6,8 @@
         xmlns:local="clr-namespace:Whirlwind"
         mc:Ignorable="d"
         Title="EnterWindow" Height="236" Width="479" WindowStartupLocation="CenterOwner" ShowInTaskbar="False" WindowStyle="ToolWindow" Closing="Window_Closing" ContentRendered="Window_ContentRendered"
-        KeyDown="enter_text_KeyDown" Icon="/WhirlwindSilver.ico">
+        KeyDown="enter_text_KeyDown">
+    <!-- <Icon="WhirlWindSilverMini.ico"> -->
     <Grid>
         <Grid.RowDefinitions>
             <RowDefinition/>

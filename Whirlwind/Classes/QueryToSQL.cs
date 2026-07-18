@@ -2,9 +2,6 @@
 using System;
 using System.Collections.Generic;
 using System.IO;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 using System.Windows;
 using Whirlwind.Views;
 
@@ -16,7 +13,7 @@ namespace Whirlwind
         {
             try
             {
-                using (var connection = new SqliteConnection(Properties.Settings.Default.connectionString))
+                using (var connection = new SqliteConnection(Properties.Settings.Default.connection_string))
                 {
                     connection.Open();
 
@@ -40,7 +37,7 @@ namespace Whirlwind
 
             try
             {
-                using (var connection = new SqliteConnection(Properties.Settings.Default.connectionString))
+                using (var connection = new SqliteConnection(Properties.Settings.Default.connection_string))
                 {
                     connection.Open();
 
@@ -69,13 +66,46 @@ namespace Whirlwind
             return fin;
         }
 
+        public static DeviceItem get_device_by_ip(string ip)
+        {
+            try
+            {
+                using (var connection = new SqliteConnection(Properties.Settings.Default.connection_string))
+                {
+                    connection.Open();
+
+                    string query = $@"SELECT id, name, ip FROM Device WHERE ip = '{ip}' LIMIT 1";
+
+                    using (var command = new SqliteCommand(query, connection))
+                    using (var reader = command.ExecuteReader())
+                    {
+                        while (reader.Read())
+                        {
+                            return new DeviceItem
+                            {
+                                Id = reader.GetInt32(0),
+                                Name = reader.GetString(1),
+                                Ip = reader.GetString(2)
+                            };
+                        }
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show($"Ошибка SQL в get_device_by_ip:\n{ex.Message}");
+            }
+
+            return null;
+        }
+
         public static List<ChatMessage> get_messages(string ip)
         {
             var fin = new List<ChatMessage>();
 
             try
             {
-                using (var connection = new SqliteConnection(Properties.Settings.Default.connectionString))
+                using (var connection = new SqliteConnection(Properties.Settings.Default.connection_string))
                 {
                     connection.Open();
 
@@ -144,7 +174,7 @@ namespace Whirlwind
             {
                 string query = $@"SELECT text FROM Message WHERE ID = {id} LIMIT 1";
 
-                using (var connection = new SqliteConnection(Properties.Settings.Default.connectionString))
+                using (var connection = new SqliteConnection(Properties.Settings.Default.connection_string))
                 {
                     connection.Open();
 
@@ -167,7 +197,7 @@ namespace Whirlwind
             {
                 string query = $@"SELECT type FROM Device WHERE ip = '{ip}' LIMIT 1";
 
-                using (var connection = new SqliteConnection(Properties.Settings.Default.connectionString))
+                using (var connection = new SqliteConnection(Properties.Settings.Default.connection_string))
                 {
                     connection.Open();
 
@@ -193,7 +223,7 @@ namespace Whirlwind
 
                 if (add_user_window.IpAddresssee == null || add_user_window.NameAddresssee == null) return;
 
-                using (var connection = new SqliteConnection(Properties.Settings.Default.connectionString))
+                using (var connection = new SqliteConnection(Properties.Settings.Default.connection_string))
                 {
                     connection.Open();
 
@@ -230,7 +260,7 @@ namespace Whirlwind
                 string oldName = device.Name;
                 string newName = add_user_window.NameAddresssee;
 
-                using (var connection = new SqliteConnection(Properties.Settings.Default.connectionString))
+                using (var connection = new SqliteConnection(Properties.Settings.Default.connection_string))
                 {
                     connection.Open();
 
@@ -247,7 +277,7 @@ namespace Whirlwind
                 {
                     try
                     {
-                        string baseDir = System.IO.Path.GetFullPath("../../../../Files");
+                        string baseDir = System.IO.Path.GetFullPath("Files");
 
                         string oldDir = System.IO.Path.Combine(baseDir, oldName);
                         string newDir = System.IO.Path.Combine(baseDir, newName);
@@ -297,7 +327,7 @@ namespace Whirlwind
                 int id = device.Id;
                 string delete;
 
-                using (var connection = new SqliteConnection(Properties.Settings.Default.connectionString))
+                using (var connection = new SqliteConnection(Properties.Settings.Default.connection_string))
                 {
                     connection.Open();
 
@@ -328,7 +358,7 @@ namespace Whirlwind
         {
             try
             {
-                using (var connection = new SqliteConnection(Properties.Settings.Default.connectionString))
+                using (var connection = new SqliteConnection(Properties.Settings.Default.connection_string))
                 {
                     connection.Open();
 
@@ -392,7 +422,7 @@ namespace Whirlwind
             {
                 string delete = $@"DELETE FROM Message WHERE ID = {id}";
 
-                using (var connection = new SqliteConnection(Properties.Settings.Default.connectionString))
+                using (var connection = new SqliteConnection(Properties.Settings.Default.connection_string))
                 {
                     connection.Open();
                     using (var cmd = new SqliteCommand(delete, connection))
@@ -411,7 +441,7 @@ namespace Whirlwind
         {
             try
             {
-                using (var connection = new SqliteConnection(Properties.Settings.Default.connectionString))
+                using (var connection = new SqliteConnection(Properties.Settings.Default.connection_string))
                 {
                     connection.Open();
 
@@ -461,6 +491,94 @@ namespace Whirlwind
             }
         }
 
-    }
+        public static sbyte get_device_muted(string ip)
+        {
+            try
+            {
+                string query = $@"SELECT muted FROM Device WHERE ip = '{ip}' LIMIT 1";
 
+                using (var connection = new SqliteConnection(Properties.Settings.Default.connection_string))
+                {
+                    connection.Open();
+
+                    using (var command = new SqliteCommand(query, connection))
+                    {
+                        object result = command.ExecuteScalar();
+                        return sbyte.Parse(result.ToString());
+                    }
+                }
+            }
+            catch
+            {
+                return 2;
+            }
+        }
+
+        public static void set_device_muted(string ip, sbyte muted)
+        {
+            try
+            {
+                using (var connection = new SqliteConnection(Properties.Settings.Default.connection_string))
+                {
+                    connection.Open();
+
+                    string update = $@"UPDATE Device SET muted = '{muted}' WHERE ip = '{ip}'";
+
+                    using (var cmd = new SqliteCommand(update, connection))
+                    {
+                        cmd.ExecuteNonQuery();
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show($"Ошибка SQL в set_default_ip_address:\n{ex.Message}");
+            }
+        }
+
+        public static sbyte get_device_blocked(string ip)
+        {
+            try
+            {
+                string query = $@"SELECT blocked FROM Device WHERE ip = '{ip}' LIMIT 1";
+
+                using (var connection = new SqliteConnection(Properties.Settings.Default.connection_string))
+                {
+                    connection.Open();
+
+                    using (var command = new SqliteCommand(query, connection))
+                    {
+                        object result = command.ExecuteScalar();
+                        return sbyte.Parse(result.ToString());
+                    }
+                }
+            }
+            catch
+            {
+                return 2;
+            }
+        }
+
+        public static void set_device_blocked(string ip, sbyte muted)
+        {
+            try
+            {
+                using (var connection = new SqliteConnection(Properties.Settings.Default.connection_string))
+                {
+                    connection.Open();
+
+                    string update = $@"UPDATE Device SET blocked = '{muted}' WHERE ip = '{ip}'";
+
+                    using (var cmd = new SqliteCommand(update, connection))
+                    {
+                        cmd.ExecuteNonQuery();
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show($"Ошибка SQL в set_default_ip_address:\n{ex.Message}");
+            }
+        }
+    }
 }

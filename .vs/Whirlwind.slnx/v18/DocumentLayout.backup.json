@@ -1,58 +1,74 @@
 {
   "Version": 1,
-  "WorkspaceRootPath": "C:\\Users\\user\\Desktop\\\u0423\u0440\u0430\u0433\u0430\u043D (Whirlwind)\\Whirlwind\\",
+  "WorkspaceRootPath": "C:\\Users\\user\\Documents\\Whirlwind_Build\\Whirlwind\\",
   "Documents": [
     {
-      "AbsoluteMoniker": "D:0:0:{B1FC9775-BDE0-41A4-0DE4-E4B74FDEF15A}|Whirlwind\\Whirlwind.csproj|c:\\users\\user\\desktop\\\u0443\u0440\u0430\u0433\u0430\u043D (whirlwind)\\whirlwind\\whirlwind\\windows\\mainwindow.xaml.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "AbsoluteMoniker": "D:0:0:{B1FC9775-BDE0-41A4-0DE4-E4B74FDEF15A}|Whirlwind\\Whirlwind.csproj|c:\\users\\user\\documents\\whirlwind_build\\whirlwind\\whirlwind\\classes\\shownotification.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{B1FC9775-BDE0-41A4-0DE4-E4B74FDEF15A}|Whirlwind\\Whirlwind.csproj|solutionrelative:whirlwind\\classes\\shownotification.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{B1FC9775-BDE0-41A4-0DE4-E4B74FDEF15A}|Whirlwind\\Whirlwind.csproj|c:\\users\\user\\documents\\whirlwind_build\\whirlwind\\whirlwind\\classes\\playsounds.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{B1FC9775-BDE0-41A4-0DE4-E4B74FDEF15A}|Whirlwind\\Whirlwind.csproj|solutionrelative:whirlwind\\classes\\playsounds.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{B1FC9775-BDE0-41A4-0DE4-E4B74FDEF15A}|Whirlwind\\Whirlwind.csproj|c:\\users\\user\\documents\\whirlwind_build\\whirlwind\\whirlwind\\windows\\mainwindow.xaml.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
       "RelativeMoniker": "D:0:0:{B1FC9775-BDE0-41A4-0DE4-E4B74FDEF15A}|Whirlwind\\Whirlwind.csproj|solutionrelative:whirlwind\\windows\\mainwindow.xaml.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
     },
     {
-      "AbsoluteMoniker": "D:0:0:{B1FC9775-BDE0-41A4-0DE4-E4B74FDEF15A}|Whirlwind\\Whirlwind.csproj|C:\\Users\\user\\Desktop\\\u0423\u0440\u0430\u0433\u0430\u043D (Whirlwind)\\Whirlwind\\whirlwind\\windows\\mainwindow.xaml||{F11ACC28-31D1-4C80-A34B-F4E09D3D753C}",
+      "AbsoluteMoniker": "D:0:0:{B1FC9775-BDE0-41A4-0DE4-E4B74FDEF15A}|Whirlwind\\Whirlwind.csproj|c:\\users\\user\\documents\\whirlwind_build\\whirlwind\\whirlwind\\windows\\mainwindow.xaml||{F11ACC28-31D1-4C80-A34B-F4E09D3D753C}",
       "RelativeMoniker": "D:0:0:{B1FC9775-BDE0-41A4-0DE4-E4B74FDEF15A}|Whirlwind\\Whirlwind.csproj|solutionrelative:whirlwind\\windows\\mainwindow.xaml||{F11ACC28-31D1-4C80-A34B-F4E09D3D753C}"
     },
     {
-      "AbsoluteMoniker": "D:0:0:{B1FC9775-BDE0-41A4-0DE4-E4B74FDEF15A}|Whirlwind\\Whirlwind.csproj|C:\\Users\\user\\Desktop\\\u0423\u0440\u0430\u0433\u0430\u043D (Whirlwind)\\Whirlwind\\whirlwind\\classes\\querytosql.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
-      "RelativeMoniker": "D:0:0:{B1FC9775-BDE0-41A4-0DE4-E4B74FDEF15A}|Whirlwind\\Whirlwind.csproj|solutionrelative:whirlwind\\classes\\querytosql.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
-    },
-    {
-      "AbsoluteMoniker": "D:0:0:{B1FC9775-BDE0-41A4-0DE4-E4B74FDEF15A}|Whirlwind\\Whirlwind.csproj|C:\\Users\\user\\Desktop\\\u0423\u0440\u0430\u0433\u0430\u043D (Whirlwind)\\Whirlwind\\whirlwind\\properties\\settings.designer.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "AbsoluteMoniker": "D:0:0:{B1FC9775-BDE0-41A4-0DE4-E4B74FDEF15A}|Whirlwind\\Whirlwind.csproj|c:\\users\\user\\documents\\whirlwind_build\\whirlwind\\whirlwind\\properties\\settings.designer.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
       "RelativeMoniker": "D:0:0:{B1FC9775-BDE0-41A4-0DE4-E4B74FDEF15A}|Whirlwind\\Whirlwind.csproj|solutionrelative:whirlwind\\properties\\settings.designer.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
     },
     {
-      "AbsoluteMoniker": "D:0:0:{B1FC9775-BDE0-41A4-0DE4-E4B74FDEF15A}|Whirlwind\\Whirlwind.csproj|C:\\Users\\user\\Desktop\\\u0423\u0440\u0430\u0433\u0430\u043D (Whirlwind)\\Whirlwind\\whirlwind\\classes\\networkprotocols.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
-      "RelativeMoniker": "D:0:0:{B1FC9775-BDE0-41A4-0DE4-E4B74FDEF15A}|Whirlwind\\Whirlwind.csproj|solutionrelative:whirlwind\\classes\\networkprotocols.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+      "AbsoluteMoniker": "D:0:0:{B1FC9775-BDE0-41A4-0DE4-E4B74FDEF15A}|Whirlwind\\Whirlwind.csproj|c:\\users\\user\\documents\\whirlwind_build\\whirlwind\\whirlwind\\classes\\querytosql.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{B1FC9775-BDE0-41A4-0DE4-E4B74FDEF15A}|Whirlwind\\Whirlwind.csproj|solutionrelative:whirlwind\\classes\\querytosql.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
     },
     {
-      "AbsoluteMoniker": "D:0:0:{B1FC9775-BDE0-41A4-0DE4-E4B74FDEF15A}|Whirlwind\\Whirlwind.csproj|C:\\Users\\user\\Desktop\\\u0423\u0440\u0430\u0433\u0430\u043D (Whirlwind)\\Whirlwind\\whirlwind\\windows\\enterwindow.xaml.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
-      "RelativeMoniker": "D:0:0:{B1FC9775-BDE0-41A4-0DE4-E4B74FDEF15A}|Whirlwind\\Whirlwind.csproj|solutionrelative:whirlwind\\windows\\enterwindow.xaml.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
-    },
-    {
-      "AbsoluteMoniker": "D:0:0:{B1FC9775-BDE0-41A4-0DE4-E4B74FDEF15A}|Whirlwind\\Whirlwind.csproj|C:\\Users\\user\\Desktop\\\u0423\u0440\u0430\u0433\u0430\u043D (Whirlwind)\\Whirlwind\\whirlwind\\views\\chatmessage.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
-      "RelativeMoniker": "D:0:0:{B1FC9775-BDE0-41A4-0DE4-E4B74FDEF15A}|Whirlwind\\Whirlwind.csproj|solutionrelative:whirlwind\\views\\chatmessage.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
-    },
-    {
-      "AbsoluteMoniker": "D:0:0:{B1FC9775-BDE0-41A4-0DE4-E4B74FDEF15A}|Whirlwind\\Whirlwind.csproj|C:\\Users\\user\\Desktop\\\u0423\u0440\u0430\u0433\u0430\u043D (Whirlwind)\\Whirlwind\\whirlwind\\app.xaml.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "AbsoluteMoniker": "D:0:0:{B1FC9775-BDE0-41A4-0DE4-E4B74FDEF15A}|Whirlwind\\Whirlwind.csproj|c:\\users\\user\\documents\\whirlwind_build\\whirlwind\\whirlwind\\app.xaml.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
       "RelativeMoniker": "D:0:0:{B1FC9775-BDE0-41A4-0DE4-E4B74FDEF15A}|Whirlwind\\Whirlwind.csproj|solutionrelative:whirlwind\\app.xaml.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
     },
     {
-      "AbsoluteMoniker": "D:0:0:{B1FC9775-BDE0-41A4-0DE4-E4B74FDEF15A}|Whirlwind\\Whirlwind.csproj|C:\\Users\\user\\Desktop\\\u0423\u0440\u0430\u0433\u0430\u043D (Whirlwind)\\Whirlwind\\whirlwind\\windows\\adduser.xaml.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
-      "RelativeMoniker": "D:0:0:{B1FC9775-BDE0-41A4-0DE4-E4B74FDEF15A}|Whirlwind\\Whirlwind.csproj|solutionrelative:whirlwind\\windows\\adduser.xaml.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+      "AbsoluteMoniker": "D:0:0:{B1FC9775-BDE0-41A4-0DE4-E4B74FDEF15A}|Whirlwind\\Whirlwind.csproj|c:\\users\\user\\documents\\whirlwind_build\\whirlwind\\whirlwind\\classes\\networkprotocols.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{B1FC9775-BDE0-41A4-0DE4-E4B74FDEF15A}|Whirlwind\\Whirlwind.csproj|solutionrelative:whirlwind\\classes\\networkprotocols.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
     },
     {
-      "AbsoluteMoniker": "D:0:0:{B1FC9775-BDE0-41A4-0DE4-E4B74FDEF15A}|Whirlwind\\Whirlwind.csproj|C:\\Users\\user\\Desktop\\\u0423\u0440\u0430\u0433\u0430\u043D (Whirlwind)\\Whirlwind\\whirlwind\\views\\deviceitem.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "AbsoluteMoniker": "D:0:0:{B1FC9775-BDE0-41A4-0DE4-E4B74FDEF15A}|Whirlwind\\Whirlwind.csproj|c:\\users\\user\\documents\\whirlwind_build\\whirlwind\\whirlwind\\views\\deviceitem.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
       "RelativeMoniker": "D:0:0:{B1FC9775-BDE0-41A4-0DE4-E4B74FDEF15A}|Whirlwind\\Whirlwind.csproj|solutionrelative:whirlwind\\views\\deviceitem.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
     },
     {
-      "AbsoluteMoniker": "D:0:0:{B1FC9775-BDE0-41A4-0DE4-E4B74FDEF15A}|Whirlwind\\Whirlwind.csproj|C:\\Users\\user\\Desktop\\\u0423\u0440\u0430\u0433\u0430\u043D (Whirlwind)\\Whirlwind\\whirlwind\\classes\\native.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "AbsoluteMoniker": "D:0:0:{B1FC9775-BDE0-41A4-0DE4-E4B74FDEF15A}|Whirlwind\\Whirlwind.csproj|c:\\users\\user\\documents\\whirlwind_build\\whirlwind\\whirlwind\\windows\\settings.xaml.cs||{8B382828-6202-11D1-8870-0000F87579D2}|",
+      "RelativeMoniker": "D:0:0:{B1FC9775-BDE0-41A4-0DE4-E4B74FDEF15A}|Whirlwind\\Whirlwind.csproj|solutionrelative:whirlwind\\windows\\settings.xaml.cs||{8B382828-6202-11D1-8870-0000F87579D2}|"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{B1FC9775-BDE0-41A4-0DE4-E4B74FDEF15A}|Whirlwind\\Whirlwind.csproj|c:\\users\\user\\documents\\whirlwind_build\\whirlwind\\whirlwind\\windows\\enterwindow.xaml.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{B1FC9775-BDE0-41A4-0DE4-E4B74FDEF15A}|Whirlwind\\Whirlwind.csproj|solutionrelative:whirlwind\\windows\\enterwindow.xaml.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{B1FC9775-BDE0-41A4-0DE4-E4B74FDEF15A}|Whirlwind\\Whirlwind.csproj|c:\\users\\user\\documents\\whirlwind_build\\whirlwind\\whirlwind\\windows\\settings.xaml||{F11ACC28-31D1-4C80-A34B-F4E09D3D753C}",
+      "RelativeMoniker": "D:0:0:{B1FC9775-BDE0-41A4-0DE4-E4B74FDEF15A}|Whirlwind\\Whirlwind.csproj|solutionrelative:whirlwind\\windows\\settings.xaml||{F11ACC28-31D1-4C80-A34B-F4E09D3D753C}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{B1FC9775-BDE0-41A4-0DE4-E4B74FDEF15A}|Whirlwind\\Whirlwind.csproj|c:\\users\\user\\documents\\whirlwind_build\\whirlwind\\whirlwind\\windows\\enterwindow.xaml||{F11ACC28-31D1-4C80-A34B-F4E09D3D753C}",
+      "RelativeMoniker": "D:0:0:{B1FC9775-BDE0-41A4-0DE4-E4B74FDEF15A}|Whirlwind\\Whirlwind.csproj|solutionrelative:whirlwind\\windows\\enterwindow.xaml||{F11ACC28-31D1-4C80-A34B-F4E09D3D753C}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{B1FC9775-BDE0-41A4-0DE4-E4B74FDEF15A}|Whirlwind\\Whirlwind.csproj|c:\\users\\user\\documents\\whirlwind_build\\whirlwind\\whirlwind\\classes\\native.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
       "RelativeMoniker": "D:0:0:{B1FC9775-BDE0-41A4-0DE4-E4B74FDEF15A}|Whirlwind\\Whirlwind.csproj|solutionrelative:whirlwind\\classes\\native.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
     },
     {
-      "AbsoluteMoniker": "D:0:0:{B1FC9775-BDE0-41A4-0DE4-E4B74FDEF15A}|Whirlwind\\Whirlwind.csproj|C:\\Users\\user\\Desktop\\\u0423\u0440\u0430\u0433\u0430\u043D (Whirlwind)\\Whirlwind\\whirlwind\\windows\\adduser.xaml||{F11ACC28-31D1-4C80-A34B-F4E09D3D753C}",
+      "AbsoluteMoniker": "D:0:0:{B1FC9775-BDE0-41A4-0DE4-E4B74FDEF15A}|Whirlwind\\Whirlwind.csproj|c:\\users\\user\\documents\\whirlwind_build\\whirlwind\\whirlwind\\windows\\adduser.xaml||{F11ACC28-31D1-4C80-A34B-F4E09D3D753C}",
       "RelativeMoniker": "D:0:0:{B1FC9775-BDE0-41A4-0DE4-E4B74FDEF15A}|Whirlwind\\Whirlwind.csproj|solutionrelative:whirlwind\\windows\\adduser.xaml||{F11ACC28-31D1-4C80-A34B-F4E09D3D753C}"
     },
     {
-      "AbsoluteMoniker": "D:0:0:{B1FC9775-BDE0-41A4-0DE4-E4B74FDEF15A}|Whirlwind\\Whirlwind.csproj|C:\\Users\\user\\Desktop\\\u0423\u0440\u0430\u0433\u0430\u043D (Whirlwind)\\Whirlwind\\whirlwind\\windows\\enterwindow.xaml||{F11ACC28-31D1-4C80-A34B-F4E09D3D753C}",
-      "RelativeMoniker": "D:0:0:{B1FC9775-BDE0-41A4-0DE4-E4B74FDEF15A}|Whirlwind\\Whirlwind.csproj|solutionrelative:whirlwind\\windows\\enterwindow.xaml||{F11ACC28-31D1-4C80-A34B-F4E09D3D753C}"
+      "AbsoluteMoniker": "D:0:0:{B1FC9775-BDE0-41A4-0DE4-E4B74FDEF15A}|Whirlwind\\Whirlwind.csproj|c:\\users\\user\\documents\\whirlwind_build\\whirlwind\\whirlwind\\windows\\adduser.xaml.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{B1FC9775-BDE0-41A4-0DE4-E4B74FDEF15A}|Whirlwind\\Whirlwind.csproj|solutionrelative:whirlwind\\windows\\adduser.xaml.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{B1FC9775-BDE0-41A4-0DE4-E4B74FDEF15A}|Whirlwind\\Whirlwind.csproj|c:\\users\\user\\documents\\whirlwind_build\\whirlwind\\whirlwind\\views\\chatmessage.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{B1FC9775-BDE0-41A4-0DE4-E4B74FDEF15A}|Whirlwind\\Whirlwind.csproj|solutionrelative:whirlwind\\views\\chatmessage.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
     }
   ],
   "DocumentGroupContainers": [
@@ -62,72 +78,101 @@
       "DocumentGroups": [
         {
           "DockedWidth": 200,
-          "SelectedChildIndex": 7,
+          "SelectedChildIndex": 5,
           "Children": [
             {
               "$type": "Document",
-              "DocumentIndex": 3,
+              "DocumentIndex": 4,
               "Title": "Settings.Designer.cs",
-              "DocumentMoniker": "C:\\Users\\user\\Desktop\\\u0423\u0440\u0430\u0433\u0430\u043D (Whirlwind)\\Whirlwind\\Whirlwind\\Properties\\Settings.Designer.cs",
+              "DocumentMoniker": "C:\\Users\\user\\Documents\\Whirlwind_Build\\Whirlwind\\Whirlwind\\Properties\\Settings.Designer.cs",
               "RelativeDocumentMoniker": "Whirlwind\\Properties\\Settings.Designer.cs",
-              "ToolTip": "C:\\Users\\user\\Desktop\\\u0423\u0440\u0430\u0433\u0430\u043D (Whirlwind)\\Whirlwind\\Whirlwind\\Properties\\Settings.Designer.cs",
+              "ToolTip": "C:\\Users\\user\\Documents\\Whirlwind_Build\\Whirlwind\\Whirlwind\\Properties\\Settings.Designer.cs",
               "RelativeToolTip": "Whirlwind\\Properties\\Settings.Designer.cs",
-              "ViewState": "AgIAAAAAAAAAAAAAAAAAABMAAAAtAAAAAAAAAA==",
+              "ViewState": "AgIAABAAAAAAAAAAAAAQwBgAAAAAAAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
               "WhenOpened": "2026-07-14T15:53:52.429Z",
-              "IsPinned": true
+              "IsPinned": true,
+              "EditorCaption": ""
             },
             {
               "$type": "Document",
-              "DocumentIndex": 7,
+              "DocumentIndex": 6,
               "Title": "App.xaml.cs",
-              "DocumentMoniker": "C:\\Users\\user\\Desktop\\\u0423\u0440\u0430\u0433\u0430\u043D (Whirlwind)\\Whirlwind\\Whirlwind\\App.xaml.cs",
+              "DocumentMoniker": "C:\\Users\\user\\Documents\\Whirlwind_Build\\Whirlwind\\Whirlwind\\App.xaml.cs",
               "RelativeDocumentMoniker": "Whirlwind\\App.xaml.cs",
-              "ToolTip": "C:\\Users\\user\\Desktop\\\u0423\u0440\u0430\u0433\u0430\u043D (Whirlwind)\\Whirlwind\\Whirlwind\\App.xaml.cs",
+              "ToolTip": "C:\\Users\\user\\Documents\\Whirlwind_Build\\Whirlwind\\Whirlwind\\App.xaml.cs",
               "RelativeToolTip": "Whirlwind\\App.xaml.cs",
-              "ViewState": "AgIAABEAAAAAAAAAAAAqwB0AAAAMAAAAAAAAAA==",
+              "ViewState": "AgIAAEIAAAAAAAAAAAASwF4AAAAmAAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
               "WhenOpened": "2026-06-22T21:40:34.413Z",
               "IsPinned": true
             },
             {
               "$type": "Document",
-              "DocumentIndex": 10,
+              "DocumentIndex": 13,
               "Title": "Native.cs",
-              "DocumentMoniker": "C:\\Users\\user\\Desktop\\\u0423\u0440\u0430\u0433\u0430\u043D (Whirlwind)\\Whirlwind\\Whirlwind\\Classes\\Native.cs",
+              "DocumentMoniker": "C:\\Users\\user\\Documents\\Whirlwind_Build\\Whirlwind\\Whirlwind\\Classes\\Native.cs",
               "RelativeDocumentMoniker": "Whirlwind\\Classes\\Native.cs",
-              "ToolTip": "C:\\Users\\user\\Desktop\\\u0423\u0440\u0430\u0433\u0430\u043D (Whirlwind)\\Whirlwind\\Whirlwind\\Classes\\Native.cs",
+              "ToolTip": "C:\\Users\\user\\Documents\\Whirlwind_Build\\Whirlwind\\Whirlwind\\Classes\\Native.cs",
               "RelativeToolTip": "Whirlwind\\Classes\\Native.cs",
-              "ViewState": "AgIAAAYAAAAAAAAAAAAAABgAAAAqAAAAAAAAAA==",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAAAAAAAANAAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
               "WhenOpened": "2026-07-13T13:35:30.286Z",
               "IsPinned": true
             },
             {
               "$type": "Document",
-              "DocumentIndex": 4,
+              "DocumentIndex": 7,
               "Title": "NetworkProtocols.cs",
-              "DocumentMoniker": "C:\\Users\\user\\Desktop\\\u0423\u0440\u0430\u0433\u0430\u043D (Whirlwind)\\Whirlwind\\Whirlwind\\Classes\\NetworkProtocols.cs",
+              "DocumentMoniker": "C:\\Users\\user\\Documents\\Whirlwind_Build\\Whirlwind\\Whirlwind\\Classes\\NetworkProtocols.cs",
               "RelativeDocumentMoniker": "Whirlwind\\Classes\\NetworkProtocols.cs",
-              "ToolTip": "C:\\Users\\user\\Desktop\\\u0423\u0440\u0430\u0433\u0430\u043D (Whirlwind)\\Whirlwind\\Whirlwind\\Classes\\NetworkProtocols.cs",
+              "ToolTip": "C:\\Users\\user\\Documents\\Whirlwind_Build\\Whirlwind\\Whirlwind\\Classes\\NetworkProtocols.cs",
               "RelativeToolTip": "Whirlwind\\Classes\\NetworkProtocols.cs",
-              "ViewState": "AgIAAAAAAAAAAAAAAAAAABMAAAAcAAAAAAAAAA==",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAANkAAABtAAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
               "WhenOpened": "2026-07-13T13:35:31.321Z",
               "IsPinned": true
             },
             {
               "$type": "Document",
-              "DocumentIndex": 2,
+              "DocumentIndex": 5,
               "Title": "QueryToSQL.cs",
-              "DocumentMoniker": "C:\\Users\\user\\Desktop\\\u0423\u0440\u0430\u0433\u0430\u043D (Whirlwind)\\Whirlwind\\Whirlwind\\Classes\\QueryToSQL.cs",
+              "DocumentMoniker": "C:\\Users\\user\\Documents\\Whirlwind_Build\\Whirlwind\\Whirlwind\\Classes\\QueryToSQL.cs",
               "RelativeDocumentMoniker": "Whirlwind\\Classes\\QueryToSQL.cs",
-              "ToolTip": "C:\\Users\\user\\Desktop\\\u0423\u0440\u0430\u0433\u0430\u043D (Whirlwind)\\Whirlwind\\Whirlwind\\Classes\\QueryToSQL.cs",
+              "ToolTip": "C:\\Users\\user\\Documents\\Whirlwind_Build\\Whirlwind\\Whirlwind\\Classes\\QueryToSQL.cs",
               "RelativeToolTip": "Whirlwind\\Classes\\QueryToSQL.cs",
-              "ViewState": "AgIAAJIAAAAAAAAAAAAAwAABAAA5AAAAAAAAAA==",
+              "ViewState": "AgIAAIoBAAAAAAAAAAAvwGQBAAAbAAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
               "WhenOpened": "2026-07-13T13:34:27.273Z",
               "IsPinned": true
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 0,
+              "Title": "ShowNotification.cs",
+              "DocumentMoniker": "C:\\Users\\user\\Documents\\Whirlwind_Build\\Whirlwind\\Whirlwind\\Classes\\ShowNotification.cs",
+              "RelativeDocumentMoniker": "Whirlwind\\Classes\\ShowNotification.cs",
+              "ToolTip": "C:\\Users\\user\\Documents\\Whirlwind_Build\\Whirlwind\\Whirlwind\\Classes\\ShowNotification.cs",
+              "RelativeToolTip": "Whirlwind\\Classes\\ShowNotification.cs",
+              "ViewState": "AgIAAAYAAAAAAAAAAAAAABAAAAAaAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2026-07-17T22:14:10.418Z",
+              "IsPinned": true,
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 1,
+              "Title": "PlaySounds.cs",
+              "DocumentMoniker": "C:\\Users\\user\\Documents\\Whirlwind_Build\\Whirlwind\\Whirlwind\\Classes\\PlaySounds.cs",
+              "RelativeDocumentMoniker": "Whirlwind\\Classes\\PlaySounds.cs",
+              "ToolTip": "C:\\Users\\user\\Documents\\Whirlwind_Build\\Whirlwind\\Whirlwind\\Classes\\PlaySounds.cs",
+              "RelativeToolTip": "Whirlwind\\Classes\\PlaySounds.cs",
+              "ViewState": "AgIAAAYAAAAAAAAAAAAAAAsAAAAxAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2026-07-18T08:19:44.925Z",
+              "IsPinned": true,
+              "EditorCaption": ""
             },
             {
               "$type": "Bookmark",
@@ -135,11 +180,11 @@
             },
             {
               "$type": "Document",
-              "DocumentIndex": 1,
+              "DocumentIndex": 3,
               "Title": "MainWindow.xaml",
-              "DocumentMoniker": "C:\\Users\\user\\Desktop\\\u0423\u0440\u0430\u0433\u0430\u043D (Whirlwind)\\Whirlwind\\Whirlwind\\Windows\\MainWindow.xaml",
+              "DocumentMoniker": "C:\\Users\\user\\Documents\\Whirlwind_Build\\Whirlwind\\Whirlwind\\Windows\\MainWindow.xaml",
               "RelativeDocumentMoniker": "Whirlwind\\Windows\\MainWindow.xaml",
-              "ToolTip": "C:\\Users\\user\\Desktop\\\u0423\u0440\u0430\u0433\u0430\u043D (Whirlwind)\\Whirlwind\\Whirlwind\\Windows\\MainWindow.xaml",
+              "ToolTip": "C:\\Users\\user\\Documents\\Whirlwind_Build\\Whirlwind\\Whirlwind\\Windows\\MainWindow.xaml",
               "RelativeToolTip": "Whirlwind\\Windows\\MainWindow.xaml",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.003549|",
               "WhenOpened": "2026-07-04T08:26:43.899Z",
@@ -147,84 +192,107 @@
             },
             {
               "$type": "Document",
-              "DocumentIndex": 0,
+              "DocumentIndex": 2,
               "Title": "MainWindow.xaml.cs",
-              "DocumentMoniker": "C:\\Users\\user\\Desktop\\\u0423\u0440\u0430\u0433\u0430\u043D (Whirlwind)\\Whirlwind\\Whirlwind\\Windows\\MainWindow.xaml.cs",
+              "DocumentMoniker": "C:\\Users\\user\\Documents\\Whirlwind_Build\\Whirlwind\\Whirlwind\\Windows\\MainWindow.xaml.cs",
               "RelativeDocumentMoniker": "Whirlwind\\Windows\\MainWindow.xaml.cs",
-              "ToolTip": "C:\\Users\\user\\Desktop\\\u0423\u0440\u0430\u0433\u0430\u043D (Whirlwind)\\Whirlwind\\Whirlwind\\Windows\\MainWindow.xaml.cs",
+              "ToolTip": "C:\\Users\\user\\Documents\\Whirlwind_Build\\Whirlwind\\Whirlwind\\Windows\\MainWindow.xaml.cs",
               "RelativeToolTip": "Whirlwind\\Windows\\MainWindow.xaml.cs",
-              "ViewState": "AgIAAJ0BAAAAAAAAAAApwKMBAABCAAAAAAAAAA==",
+              "ViewState": "AgIAAKIEAAAAAAAAAAAAAK8EAAAvAAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
               "WhenOpened": "2026-07-04T08:26:43.293Z",
               "EditorCaption": ""
             },
             {
               "$type": "Document",
+              "DocumentIndex": 11,
+              "Title": "Settings.xaml",
+              "DocumentMoniker": "C:\\Users\\user\\Documents\\Whirlwind_Build\\Whirlwind\\Whirlwind\\Windows\\Settings.xaml",
+              "RelativeDocumentMoniker": "Whirlwind\\Windows\\Settings.xaml",
+              "ToolTip": "C:\\Users\\user\\Documents\\Whirlwind_Build\\Whirlwind\\Whirlwind\\Windows\\Settings.xaml",
+              "RelativeToolTip": "Whirlwind\\Windows\\Settings.xaml",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.003549|",
+              "WhenOpened": "2026-07-18T09:48:41.005Z"
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 9,
+              "Title": "Settings.xaml.cs",
+              "DocumentMoniker": "C:\\Users\\user\\Documents\\Whirlwind_Build\\Whirlwind\\Whirlwind\\Windows\\Settings.xaml.cs",
+              "RelativeDocumentMoniker": "Whirlwind\\Windows\\Settings.xaml.cs",
+              "ToolTip": "C:\\Users\\user\\Documents\\Whirlwind_Build\\Whirlwind\\Whirlwind\\Windows\\Settings.xaml.cs",
+              "RelativeToolTip": "Whirlwind\\Windows\\Settings.xaml.cs",
+              "ViewState": "AgIAAA4AAAAAAAAAAAAAwCgAAAAzAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2026-07-18T09:48:57.906Z"
+            },
+            {
+              "$type": "Document",
               "DocumentIndex": 12,
               "Title": "EnterWindow.xaml",
-              "DocumentMoniker": "C:\\Users\\user\\Desktop\\\u0423\u0440\u0430\u0433\u0430\u043D (Whirlwind)\\Whirlwind\\Whirlwind\\Windows\\EnterWindow.xaml",
+              "DocumentMoniker": "C:\\Users\\user\\Documents\\Whirlwind_Build\\Whirlwind\\Whirlwind\\Windows\\EnterWindow.xaml",
               "RelativeDocumentMoniker": "Whirlwind\\Windows\\EnterWindow.xaml",
-              "ToolTip": "C:\\Users\\user\\Desktop\\\u0423\u0440\u0430\u0433\u0430\u043D (Whirlwind)\\Whirlwind\\Whirlwind\\Windows\\EnterWindow.xaml",
+              "ToolTip": "C:\\Users\\user\\Documents\\Whirlwind_Build\\Whirlwind\\Whirlwind\\Windows\\EnterWindow.xaml",
               "RelativeToolTip": "Whirlwind\\Windows\\EnterWindow.xaml",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.003549|",
               "WhenOpened": "2026-07-04T08:26:45.436Z"
             },
             {
               "$type": "Document",
-              "DocumentIndex": 5,
+              "DocumentIndex": 10,
               "Title": "EnterWindow.xaml.cs",
-              "DocumentMoniker": "C:\\Users\\user\\Desktop\\\u0423\u0440\u0430\u0433\u0430\u043D (Whirlwind)\\Whirlwind\\Whirlwind\\Windows\\EnterWindow.xaml.cs",
+              "DocumentMoniker": "C:\\Users\\user\\Documents\\Whirlwind_Build\\Whirlwind\\Whirlwind\\Windows\\EnterWindow.xaml.cs",
               "RelativeDocumentMoniker": "Whirlwind\\Windows\\EnterWindow.xaml.cs",
-              "ToolTip": "C:\\Users\\user\\Desktop\\\u0423\u0440\u0430\u0433\u0430\u043D (Whirlwind)\\Whirlwind\\Whirlwind\\Windows\\EnterWindow.xaml.cs",
+              "ToolTip": "C:\\Users\\user\\Documents\\Whirlwind_Build\\Whirlwind\\Whirlwind\\Windows\\EnterWindow.xaml.cs",
               "RelativeToolTip": "Whirlwind\\Windows\\EnterWindow.xaml.cs",
-              "ViewState": "AgIAAEAAAAAAAAAAAAAkwAAAAAAAAAAAAAAAAA==",
+              "ViewState": "AgIAADYAAAAAAAAAAAAEwEIAAAAbAAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
               "WhenOpened": "2026-07-04T08:26:44.665Z"
             },
             {
               "$type": "Document",
-              "DocumentIndex": 8,
-              "Title": "AddUser.xaml.cs",
-              "DocumentMoniker": "C:\\Users\\user\\Desktop\\\u0423\u0440\u0430\u0433\u0430\u043D (Whirlwind)\\Whirlwind\\Whirlwind\\Windows\\AddUser.xaml.cs",
-              "RelativeDocumentMoniker": "Whirlwind\\Windows\\AddUser.xaml.cs",
-              "ToolTip": "C:\\Users\\user\\Desktop\\\u0423\u0440\u0430\u0433\u0430\u043D (Whirlwind)\\Whirlwind\\Whirlwind\\Windows\\AddUser.xaml.cs",
-              "RelativeToolTip": "Whirlwind\\Windows\\AddUser.xaml.cs",
-              "ViewState": "AgIAAAwAAAAAAAAAAAAAAA8AAAATAAAAAAAAAA==",
-              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
-              "WhenOpened": "2026-07-04T08:26:38.822Z"
-            },
-            {
-              "$type": "Document",
-              "DocumentIndex": 11,
+              "DocumentIndex": 14,
               "Title": "AddUser.xaml",
-              "DocumentMoniker": "C:\\Users\\user\\Desktop\\\u0423\u0440\u0430\u0433\u0430\u043D (Whirlwind)\\Whirlwind\\Whirlwind\\Windows\\AddUser.xaml",
+              "DocumentMoniker": "C:\\Users\\user\\Documents\\Whirlwind_Build\\Whirlwind\\Whirlwind\\Windows\\AddUser.xaml",
               "RelativeDocumentMoniker": "Whirlwind\\Windows\\AddUser.xaml",
-              "ToolTip": "C:\\Users\\user\\Desktop\\\u0423\u0440\u0430\u0433\u0430\u043D (Whirlwind)\\Whirlwind\\Whirlwind\\Windows\\AddUser.xaml",
+              "ToolTip": "C:\\Users\\user\\Documents\\Whirlwind_Build\\Whirlwind\\Whirlwind\\Windows\\AddUser.xaml",
               "RelativeToolTip": "Whirlwind\\Windows\\AddUser.xaml",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.003549|",
               "WhenOpened": "2026-07-04T08:25:26.042Z"
             },
             {
               "$type": "Document",
-              "DocumentIndex": 6,
+              "DocumentIndex": 15,
+              "Title": "AddUser.xaml.cs",
+              "DocumentMoniker": "C:\\Users\\user\\Documents\\Whirlwind_Build\\Whirlwind\\Whirlwind\\Windows\\AddUser.xaml.cs",
+              "RelativeDocumentMoniker": "Whirlwind\\Windows\\AddUser.xaml.cs",
+              "ToolTip": "C:\\Users\\user\\Documents\\Whirlwind_Build\\Whirlwind\\Whirlwind\\Windows\\AddUser.xaml.cs",
+              "RelativeToolTip": "Whirlwind\\Windows\\AddUser.xaml.cs",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAAAQAAAABAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2026-07-04T08:26:38.822Z"
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 16,
               "Title": "ChatMessage.cs",
-              "DocumentMoniker": "C:\\Users\\user\\Desktop\\\u0423\u0440\u0430\u0433\u0430\u043D (Whirlwind)\\Whirlwind\\Whirlwind\\Views\\ChatMessage.cs",
+              "DocumentMoniker": "C:\\Users\\user\\Documents\\Whirlwind_Build\\Whirlwind\\Whirlwind\\Views\\ChatMessage.cs",
               "RelativeDocumentMoniker": "Whirlwind\\Views\\ChatMessage.cs",
-              "ToolTip": "C:\\Users\\user\\Desktop\\\u0423\u0440\u0430\u0433\u0430\u043D (Whirlwind)\\Whirlwind\\Whirlwind\\Views\\ChatMessage.cs",
+              "ToolTip": "C:\\Users\\user\\Documents\\Whirlwind_Build\\Whirlwind\\Whirlwind\\Views\\ChatMessage.cs",
               "RelativeToolTip": "Whirlwind\\Views\\ChatMessage.cs",
-              "ViewState": "AgIAAAAAAAAAAAAAAAAAABsAAAAcAAAAAAAAAA==",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
               "WhenOpened": "2026-07-13T13:37:25.796Z"
             },
             {
               "$type": "Document",
-              "DocumentIndex": 9,
+              "DocumentIndex": 8,
               "Title": "DeviceItem.cs",
-              "DocumentMoniker": "C:\\Users\\user\\Desktop\\\u0423\u0440\u0430\u0433\u0430\u043D (Whirlwind)\\Whirlwind\\Whirlwind\\Views\\DeviceItem.cs",
+              "DocumentMoniker": "C:\\Users\\user\\Documents\\Whirlwind_Build\\Whirlwind\\Whirlwind\\Views\\DeviceItem.cs",
               "RelativeDocumentMoniker": "Whirlwind\\Views\\DeviceItem.cs",
-              "ToolTip": "C:\\Users\\user\\Desktop\\\u0423\u0440\u0430\u0433\u0430\u043D (Whirlwind)\\Whirlwind\\Whirlwind\\Views\\DeviceItem.cs",
+              "ToolTip": "C:\\Users\\user\\Documents\\Whirlwind_Build\\Whirlwind\\Whirlwind\\Views\\DeviceItem.cs",
               "RelativeToolTip": "Whirlwind\\Views\\DeviceItem.cs",
-              "ViewState": "AgIAAAAAAAAAAAAAAAAAAAwAAAAbAAAAAAAAAA==",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAuwAIAAAATAAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
               "WhenOpened": "2026-07-13T13:37:27.724Z"
             }
