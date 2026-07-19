@@ -2,6 +2,7 @@
 using System;
 using System.Collections.Generic;
 using System.IO;
+using System.Linq;
 using System.Windows;
 using Whirlwind.Views;
 
@@ -214,33 +215,82 @@ namespace Whirlwind
             }
         }
 
-        public static void add_user()
+        public static bool IsValidDirectoryName(string name)
+        {
+            if (string.IsNullOrWhiteSpace(name))
+                return false;
+
+            char[] invalidChars = Path.GetInvalidFileNameChars();
+
+            if (name.Any(c => invalidChars.Contains(c)))
+                return false;
+
+            string[] reserved =
+            {
+                "CON","PRN","AUX","NUL",
+                "COM1","COM2","COM3","COM4","COM5","COM6","COM7","COM8","COM9",
+                "LPT1","LPT2","LPT3","LPT4","LPT5","LPT6","LPT7","LPT8","LPT9"
+            };
+
+            if (reserved.Contains(name.ToUpper()))
+                return false;
+
+            return true;
+        }
+
+
+
+        public static void add_device()
         {
             try
             {
                 var add_user_window = new AddUser();
                 add_user_window.ShowDialog();
 
-                if (add_user_window.IpAddresssee == null || add_user_window.NameAddresssee == null) return;
+                string ip = add_user_window.IpAddresssee;
+                string name = add_user_window.NameAddresssee;
+
+                if (ip == null || name == null)
+                    return;
+
+                if (!IsValidDirectoryName(name))
+                {
+                    MessageBox.Show(
+                        "Имя устройства содержит недопустимые символы.\n" +
+                        "Папка не может быть создана.",
+                        "Ошибка имени",
+                        MessageBoxButton.OK,
+                        MessageBoxImage.Warning
+                    );
+                    return;
+                }
 
                 using (var connection = new SqliteConnection(Properties.Settings.Default.connection_string))
                 {
                     connection.Open();
 
-                    string insert = $@"INSERT INTO Device (ip, type, name) 
-                            VALUES ('{add_user_window.IpAddresssee}', '2', '{add_user_window.NameAddresssee}')";
+                    string insert = @"INSERT INTO Device (ip, type, name) 
+                              VALUES (@ip, '2', @name)";
 
                     using (var cmd = new SqliteCommand(insert, connection))
                     {
+                        cmd.Parameters.AddWithValue("@ip", ip);
+                        cmd.Parameters.AddWithValue("@name", name);
                         cmd.ExecuteNonQuery();
                     }
                 }
+
+                // Создаём директорию
+                string baseDir = Path.GetFullPath("Files");
+                Directory.CreateDirectory(Path.Combine(baseDir, name));
             }
             catch (Exception ex)
             {
                 MessageBox.Show($"Ошибка SQL в add_user:\n{ex.Message}");
             }
         }
+
+
 
         public static (string chat_title, string ip_title, string current_interlocutor) update_device(DeviceItem device)
         {
@@ -254,64 +304,51 @@ namespace Whirlwind
 
                 add_user_window.ShowDialog();
 
-                if (add_user_window.IpAddresssee == null || add_user_window.NameAddresssee == null)
+                string newIp = add_user_window.IpAddresssee;
+                string newName = add_user_window.NameAddresssee;
+
+                if (newIp == null || newName == null)
                     return (null, null, null);
 
-                string oldName = device.Name;
-                string newName = add_user_window.NameAddresssee;
+                if (!IsValidDirectoryName(newName))
+                {
+                    MessageBox.Show(
+                        "Новое имя устройства содержит недопустимые символы.\n" +
+                        "Переименование отменено.",
+                        "Ошибка имени",
+                        MessageBoxButton.OK,
+                        MessageBoxImage.Warning
+                    );
+                    return (null, null, null);
+                }
 
                 using (var connection = new SqliteConnection(Properties.Settings.Default.connection_string))
                 {
                     connection.Open();
 
-                    string update = $@"UPDATE Device SET ip = '{add_user_window.IpAddresssee}',
-                name = '{add_user_window.NameAddresssee}' WHERE id = '{id}' and type = '2'";
+                    string update = @"UPDATE Device 
+                              SET ip = @ip, name = @name 
+                              WHERE id = @id AND type = '2'";
 
                     using (var cmd = new SqliteCommand(update, connection))
                     {
+                        cmd.Parameters.AddWithValue("@ip", newIp);
+                        cmd.Parameters.AddWithValue("@name", newName);
+                        cmd.Parameters.AddWithValue("@id", id);
                         cmd.ExecuteNonQuery();
                     }
                 }
 
-                if (oldName != newName)
+                string baseDir = Path.GetFullPath("Files");
+                string oldDir = Path.Combine(baseDir, device.Name);
+                string newDir = Path.Combine(baseDir, newName);
+
+                if (Directory.Exists(oldDir))
                 {
-                    try
-                    {
-                        string baseDir = System.IO.Path.GetFullPath("Files");
-
-                        string oldDir = System.IO.Path.Combine(baseDir, oldName);
-                        string newDir = System.IO.Path.Combine(baseDir, newName);
-
-                        if (Directory.Exists(oldDir))
-                        {
-                            if (Directory.Exists(newDir))
-                            {
-                                int counter = 2;
-                                string uniqueDir;
-
-                                do
-                                {
-                                    uniqueDir = System.IO.Path.Combine(baseDir, $"{newName} ({counter})");
-                                    counter++;
-                                }
-                                while (Directory.Exists(uniqueDir));
-
-                                newDir = uniqueDir;
-                            }
-
-                            Directory.Move(oldDir, newDir);
-                        }
-                    }
-                    catch (Exception ex)
-                    {
-                        MessageBox.Show($"Ошибка при обновлении директории пользователя:\n{ex.Message}",
-                                        "Обновление директории",
-                                        MessageBoxButton.OK,
-                                        MessageBoxImage.Error);
-                    }
+                    Directory.Move(oldDir, newDir);
                 }
 
-                return (add_user_window.add_name.Text, add_user_window.add_ip_address.Text, add_user_window.add_ip_address.Text);
+                return (newName, newIp, newIp);
             }
             catch (Exception ex)
             {
@@ -319,6 +356,8 @@ namespace Whirlwind
                 return (null, null, null);
             }
         }
+
+
 
         public static void delete_device(DeviceItem device)
         {

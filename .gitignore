@@ -1,0 +1,96 @@
+############################
+# Visual Studio / .NET
+############################
+.vs/
+*.user
+*.suo
+*.userosscache
+*.sln.docstates
+
+############################
+# Build outputs
+############################
+bin/
+obj/
+[Bb]uild/
+[Ll]og/
+[Tt]emp/
+
+############################
+# WPF / XAML generated
+############################
+*.g.cs
+*.g.i.cs
+*.i.cs
+*.baml
+
+############################
+# NuGet
+############################
+packages/
+*.nupkg
+*.snupkg
+project.lock.json
+project.assets.json
+*.nuget.props
+*.nuget.targets
+
+############################
+# SQLite
+############################
+*.db-shm
+*.db-wal
+*.sqlite-journal
+
+############################
+# System / OS
+############################
+Thumbs.db
+ehthumbs.db
+Desktop.ini
+$RECYCLE.BIN/
+
+############################
+# Logs
+############################
+*.log
+*.trace
+*.dmp
+
+############################
+# Cache
+############################
+*.cache
+*.tmp
+*.temp
+
+############################
+# JetBrains Rider / ReSharper
+############################
+.idea/
+*.DotSettings.user
+
+############################
+# VS Code
+############################
+.vscode/
+
+############################
+# Publish artifacts
+############################
+publish/
+dist/
+out/
+
+############################
+# Your project-specific folders
+############################
+
+# Файлы пользователей — не должны попадать в репозиторий
+Files/
+
+# Вложения сообщений
+Attachments/
+
+# Временные файлы Whirlwind
+WhirlwindTemp/

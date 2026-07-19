@@ -442,7 +442,7 @@ namespace Whirlwind
             IpTitle.Text = Properties.Settings.Default.ip_sender;
             CurrentInterlocutor = Properties.Settings.Default.ip_sender;
 
-            load_users();
+            load_devices();
             load_messages(CurrentInterlocutor);
         }
 
@@ -481,7 +481,7 @@ namespace Whirlwind
             };
         }
 
-        private void load_users()
+        private void load_devices()
         {
             DeviceList.Items.Clear();
 
@@ -627,11 +627,11 @@ namespace Whirlwind
             refresh_attached_files_list();
         }
 
-        private void add_user_Click(object sender, RoutedEventArgs e)
+        private void add_device_Click(object sender, RoutedEventArgs e)
         {
-            QueryToSQL.add_user();
+            QueryToSQL.add_device();
 
-            load_users();
+            load_devices();
         }
 
         private void update_device_Click(object sender, RoutedEventArgs e)
@@ -646,7 +646,7 @@ namespace Whirlwind
                 IpTitle.Text = devices.ip_title;
                 CurrentInterlocutor = devices.current_interlocutor;
 
-                load_users();
+                load_devices();
                 load_messages(CurrentInterlocutor);
             }
         }
@@ -680,7 +680,7 @@ namespace Whirlwind
                 CurrentInterlocutor = null;
             }
 
-            load_users();
+            load_devices();
             load_messages(CurrentInterlocutor);
         }
 
@@ -1051,7 +1051,7 @@ namespace Whirlwind
         {
             QueryToSQL.add_message_to_db(sender, addressee, seconds, device_type, message_type, message);
 
-            load_users();
+            load_devices();
             load_messages(CurrentInterlocutor);
         }
 

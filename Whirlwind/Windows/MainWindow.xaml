@@ -58,7 +58,7 @@
                             Margin="0 0 10 0"
                             HorizontalAlignment="Stretch"
                             VerticalAlignment="Center"
-                            Click="add_user_Click"/>
+                            Click="add_device_Click"/>
 
                     <Button x:Name="change_sender_ipaddress"
                             Content="Изменить IP адрес"
