@@ -20,8 +20,9 @@ namespace Whirlwind.Properties
     {
         internal string ip_sender = null;
         internal string port_sender = "3866";
+        internal string port_file_sender = "3867";
         internal bool window_was_opened = false;
-        internal string connection_string = "Data Source=Data/data.db";
+        internal string connection_string = "Data Source=../Data/data.db";
 
         [UserScopedSetting]
         [DefaultSettingValue("0.5")]

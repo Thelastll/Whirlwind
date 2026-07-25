@@ -1,10 +1,23 @@
 ﻿using System;
+using System.Collections.Generic;
+using System.Net.Sockets;
+using System.Runtime.InteropServices;
 using System.Text;
+using static Whirlwind.MainWindow;
 
 namespace Whirlwind
 {
     internal static class NetworkProtocols
     {
+        [StructLayout(LayoutKind.Sequential)]
+        public unsafe struct TypeMessage8
+        {
+            public fixed byte Bytes[8];
+        }
+
+        public static Dictionary<string, List<byte[]>> receivingFiles = new();
+
+
         public static byte[] ip_to_bytes(string ip)
         {
             string[] parts = ip.Split('.');
@@ -19,7 +32,37 @@ namespace Whirlwind
             return bytes;
         }
 
-        public static byte[] build_packet(byte protocolType, ushort protocolVersion, string senderIp, byte[] body)
+        public static unsafe TypeMessage8 build_saved_packet_identification(byte protocolType = 0, ushort protocolVersion = 0, string senderIp = "127.0.0.1", byte action = 0)
+        {
+            TypeMessage8 tm = new TypeMessage8();
+
+            tm.Bytes[0] = protocolType;
+            tm.Bytes[1] = (byte)(protocolVersion >> 8);
+            tm.Bytes[2] = (byte)(protocolVersion & 0xFF);
+
+            byte[] ip = ip_to_bytes(senderIp);
+
+            tm.Bytes[3] = ip[0];
+            tm.Bytes[4] = ip[1];
+            tm.Bytes[5] = ip[2];
+            tm.Bytes[6] = ip[3];
+
+            tm.Bytes[7] = action;
+
+            return tm;
+        }
+
+        public static (byte, ushort, string, byte) on_parse_saved_packet_identification(byte[] packet)
+        {
+            byte protocolType = packet[0];
+            ushort protocolVersion = (ushort)((packet[1] << 8) | packet[2]);
+            string ip = $"{packet[3]}.{packet[4]}.{packet[5]}.{packet[6]}";
+            byte action = packet[7];
+
+            return (protocolType, protocolVersion, ip, action);
+        }
+
+        public static byte[] build_packet(byte protocol_type, ushort protocol_version, string senderIp, byte[] body)
         {
             byte[] ip_bytes = ip_to_bytes(senderIp);
             if (ip_bytes == null) return null;
@@ -29,10 +72,10 @@ namespace Whirlwind
             byte[] packet = new byte[11 + body.Length];
             int offset = 0;
 
-            packet[offset++] = protocolType;
+            packet[offset++] = protocol_type;
 
-            packet[offset++] = (byte)(protocolVersion >> 8);
-            packet[offset++] = (byte)(protocolVersion & 0xFF);
+            packet[offset++] = (byte)(protocol_version >> 8);
+            packet[offset++] = (byte)(protocol_version & 0xFF);
 
             Array.Copy(ip_bytes, 0, packet, offset, 4);
             offset += 4;
@@ -79,7 +122,7 @@ namespace Whirlwind
             // extra_data
             Array.Copy(extra.data, 0, body, offset, extra.data.Length);
 
-            return build_packet(protocolType: 0, protocolVersion: extra.protocol_version, senderIp: senderIp, body: body);
+            return build_packet(protocol_type: 0, protocol_version: extra.protocol_version, senderIp: senderIp, body: body);
         }
 
         public static (ushort, byte[]) build_text_extra_data_v0()
@@ -119,11 +162,22 @@ namespace Whirlwind
             Array.Copy(msgBytes, 0, body, offset, msgBytes.Length);
 
             return build_packet(
-                protocolType: 1,
-                protocolVersion: extra.protocol_version,
+                protocol_type: 1,
+                protocol_version: extra.protocol_version,
                 senderIp: senderIp,
                 body: body
             );
+        }
+
+        public static (ushort, byte[]) build_file_extra_data_v1(long totalSize, long offset)
+        {
+            byte[] packet = new byte[16];
+
+            Array.Copy(BitConverter.GetBytes(totalSize), 0, packet, 0, 8);
+
+            Array.Copy(BitConverter.GetBytes(offset), 0, packet, 8, 8);
+
+            return (1, packet);
         }
 
         public static byte[] build_file_packet(string senderIp, long seconds, byte device_type, byte message_type, 
@@ -173,8 +227,8 @@ namespace Whirlwind
             Array.Copy(fileContent, 0, body, offset, fileContentLen);
 
             return build_packet(
-                protocolType: 2,
-                protocolVersion: extra.protocol_version,
+                protocol_type: 2,
+                protocol_version: extra.protocol_version,
                 senderIp: senderIp,
                 body: body
             );
@@ -256,6 +310,17 @@ namespace Whirlwind
             string message = Encoding.UTF8.GetString(msgBytes);
 
             return (seconds, device_type, message_type, extra_data, message);
+        }
+
+        public static (long totalSize, long offset) on_parse_file_extra_data_v1(byte[] extra_data)
+        {
+            if (extra_data == null || extra_data.Length < 16)
+                return (0, 0);
+
+            long totalSize = BitConverter.ToInt64(extra_data, 0);
+            long offset = BitConverter.ToInt64(extra_data, 8);
+
+            return (totalSize, offset);
         }
 
         public static (long seconds, byte device_type, byte message_type, byte[] extra_data, string fileName, byte[] fileContent) 

@@ -14,7 +14,7 @@ namespace Whirlwind.Classes
             Stop();
 
             _output = new WaveOutEvent();
-            _audioFile = new AudioFileReader("Sounds/multimedia-message-arrival-sound.wav")
+            _audioFile = new AudioFileReader("../Sounds/multimedia-message-arrival-sound.wav")
             {
                 Volume = GlobalVolume,
             };

@@ -280,8 +280,7 @@ namespace Whirlwind
                     }
                 }
 
-                // Создаём директорию
-                string baseDir = Path.GetFullPath("Files");
+                string baseDir = Path.GetFullPath("../Files");
                 Directory.CreateDirectory(Path.Combine(baseDir, name));
             }
             catch (Exception ex)
@@ -339,11 +338,11 @@ namespace Whirlwind
                     }
                 }
 
-                string baseDir = Path.GetFullPath("Files");
+                string baseDir = Path.GetFullPath("../Files");
                 string oldDir = Path.Combine(baseDir, device.Name);
                 string newDir = Path.Combine(baseDir, newName);
 
-                if (Directory.Exists(oldDir))
+                if (Directory.Exists(oldDir) && oldDir != newDir)
                 {
                     Directory.Move(oldDir, newDir);
                 }
@@ -598,15 +597,17 @@ namespace Whirlwind
             }
         }
 
-        public static void set_device_blocked(string ip, sbyte muted)
+        public static void set_device_blocked(string ip, bool blocked)
         {
+            sbyte set = blocked ? (sbyte)1 : (sbyte)0;
+
             try
             {
                 using (var connection = new SqliteConnection(Properties.Settings.Default.connection_string))
                 {
                     connection.Open();
 
-                    string update = $@"UPDATE Device SET blocked = '{muted}' WHERE ip = '{ip}'";
+                    string update = $@"UPDATE Device SET blocked = '{set}' WHERE ip = '{ip}'";
 
                     using (var cmd = new SqliteCommand(update, connection))
                     {

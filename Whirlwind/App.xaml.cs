@@ -31,9 +31,9 @@ namespace Whirlwind
 
                 if (arguments.Contains("action=open"))
                 {
-                    var main = new MainWindow();
-                    main.Show();
-                    main.Activate();
+                    MainWindowInstance = new MainWindow();
+                    MainWindowInstance.Show();
+                    MainWindowInstance.Activate();
                     return;
                 }
             }
@@ -56,21 +56,21 @@ namespace Whirlwind
         {
             Application.Current.Dispatcher.Invoke(() =>
             {
-                var main = (MainWindow)Application.Current.MainWindow;
+                MainWindowInstance = (MainWindow)Application.Current.MainWindow;
 
                 // Показать окно, если скрыто
-                if (main.Visibility != Visibility.Visible)
-                    main.Show();
+                if (MainWindowInstance.Visibility != Visibility.Visible)
+                    MainWindowInstance.Show();
 
                 // Развернуть, если свернуто
-                if (main.WindowState == WindowState.Minimized)
-                    main.WindowState = WindowState.Normal;
+                if (MainWindowInstance.WindowState == WindowState.Minimized)
+                    MainWindowInstance.WindowState = WindowState.Normal;
 
                 // Вывести на передний план
-                main.Topmost = true;
-                main.Topmost = false;
-                main.Activate();
-                main.Focus();
+                MainWindowInstance.Topmost = true;
+                MainWindowInstance.Topmost = false;
+                MainWindowInstance.Activate();
+                MainWindowInstance.Focus();
 
                 // -----------------------------
                 // ВЫЗОВ device_item_Click
@@ -84,15 +84,16 @@ namespace Whirlwind
                 int id = int.Parse(args["deviceId"]);
 
                 // Ищем нужный DeviceItem
-                var device = main.DeviceList.Items
+                var device = MainWindowInstance.DeviceList.Items
                     .OfType<DeviceItem>()
                     .FirstOrDefault(d => d.Id == id);
 
-                main.ChatTitle.Text = device.Name;
-                main.IpTitle.Text = device.Ip;
-                main.CurrentInterlocutor = device.Ip;
-                main.load_messages(device.Ip);
-                main.change_muted_mode(device.Ip);
+                MainWindowInstance.ChatTitle.Text = device.Name;
+                MainWindowInstance.IpTitle.Text = device.Ip;
+                MainWindowInstance.CurrentInterlocutor = device.Ip;
+                MainWindowInstance.load_messages(device.Ip);
+                MainWindowInstance.change_muted_mode(device.Ip);
+                MainWindowInstance.change_blocked_mode(device.Ip);
             });
         }
 

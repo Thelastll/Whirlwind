@@ -8,7 +8,7 @@ namespace Whirlwind.Classes
     {
         public static void ShowToast(string name, string message, Views.DeviceItem device, sbyte muted = -1)
         {
-            if (muted == 3) return;
+            if (muted == 3 || device.Ip == App.MainWindowInstance.CurrentInterlocutor) return;
 
             if (muted != 1)
             {

@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Runtime.InteropServices;
+using static Whirlwind.NetworkProtocols;
 
 namespace Whirlwind
 {
@@ -32,7 +33,7 @@ namespace Whirlwind
         public static extern void test_ip_port_sender(string ip, string port, GetBytes cb_ok, GetBytes cb_err);
 
         [DllImport(Dll, CallingConvention = CallingConvention.Cdecl)]
-        public static extern void send_message(string ip, string port, byte[] data, int len, PassDelegate pd, GetBytes cb);
+        public static extern unsafe void send_message(string ip, string port, byte[] data, int len);
 
         [DllImport(Dll, CallingConvention = CallingConvention.Cdecl)]
         public static extern void set_timeouts(ulong connect_ms, ulong write_ms);
