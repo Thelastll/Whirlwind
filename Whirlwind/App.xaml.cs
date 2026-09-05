@@ -4,9 +4,8 @@ using System;
 using System.Diagnostics;
 using System.IO;
 using System.Linq;
-using System.Runtime.InteropServices;
+using System.Threading;
 using System.Windows;
-using System.Windows.Controls;
 using Whirlwind.Interop;
 using Whirlwind.Views;
 
@@ -15,28 +14,24 @@ namespace Whirlwind
     public partial class App : Application
     {
         public static bool IsAutostart { get; private set; } = false;
-        public static MainWindow MainWindowInstance;
 
-        // -------------------- Startup --------------------
+        public static MainWindow MainWindowInstance;
+        
+        private static Mutex _singleInstanceMutex;
 
         protected override void OnStartup(StartupEventArgs e)
         {
-            ToastNotificationManagerCompat.OnActivated += OnToastActivated;
+            bool createdNew;
+
+            _singleInstanceMutex = new Mutex(true, "WhirlwindSingleInstanceMutex", out createdNew);
+
+            if (!createdNew)
+            {
+                Environment.Exit(0);
+                return;
+            }
 
             base.OnStartup(e);
-
-            if (e.Args.Length > 0 && e.Args[0].StartsWith("-ToastActivated"))
-            {
-                string arguments = e.Args[0].Substring("-ToastActivated".Length).Trim();
-
-                if (arguments.Contains("action=open"))
-                {
-                    MainWindowInstance = new MainWindow();
-                    MainWindowInstance.Show();
-                    MainWindowInstance.Activate();
-                    return;
-                }
-            }
 
             CreateStartMenuShortcut();
 
@@ -49,55 +44,17 @@ namespace Whirlwind
             AddAutostart();
 
             MainWindowInstance = new MainWindow();
+            Application.Current.MainWindow = MainWindowInstance;
             MainWindowInstance.Show();
         }
 
-        private void OnToastActivated(ToastNotificationActivatedEventArgsCompat e)
+        protected override void OnExit(ExitEventArgs e)
         {
-            Application.Current.Dispatcher.Invoke(() =>
-            {
-                MainWindowInstance = (MainWindow)Application.Current.MainWindow;
-
-                // Показать окно, если скрыто
-                if (MainWindowInstance.Visibility != Visibility.Visible)
-                    MainWindowInstance.Show();
-
-                // Развернуть, если свернуто
-                if (MainWindowInstance.WindowState == WindowState.Minimized)
-                    MainWindowInstance.WindowState = WindowState.Normal;
-
-                // Вывести на передний план
-                MainWindowInstance.Topmost = true;
-                MainWindowInstance.Topmost = false;
-                MainWindowInstance.Activate();
-                MainWindowInstance.Focus();
-
-                // -----------------------------
-                // ВЫЗОВ device_item_Click
-                // -----------------------------
-
-                var args = ToastArguments.Parse(e.Argument);
-
-                if (!args.Contains("deviceId"))
-                    return;
-
-                int id = int.Parse(args["deviceId"]);
-
-                // Ищем нужный DeviceItem
-                var device = MainWindowInstance.DeviceList.Items
-                    .OfType<DeviceItem>()
-                    .FirstOrDefault(d => d.Id == id);
-
-                MainWindowInstance.ChatTitle.Text = device.Name;
-                MainWindowInstance.IpTitle.Text = device.Ip;
-                MainWindowInstance.CurrentInterlocutor = device.Ip;
-                MainWindowInstance.load_messages(device.Ip);
-                MainWindowInstance.change_muted_mode(device.Ip);
-                MainWindowInstance.change_blocked_mode(device.Ip);
-            });
+            _singleInstanceMutex?.ReleaseMutex();
+            _singleInstanceMutex?.Dispose();
+            base.OnExit(e);
         }
 
-        // -------------------- Ярлык Start Menu --------------------
 
         private void CreateStartMenuShortcut()
         {
@@ -121,30 +78,7 @@ namespace Whirlwind
             link.SetPath(exePath);
             link.SetWorkingDirectory(Path.GetDirectoryName(exePath));
             link.SetDescription("Whirlwind");
-
-            // Прописываем AppID
-            var propStore = (IPropertyStore)link;
-
-            var pv = new PROPVARIANT();
-            pv.vt = 8; // VT_BSTR
-            pv.p = Marshal.StringToBSTR("Whirlwind.App");
-
-            PROPERTYKEY key = new PROPERTYKEY
-            {
-                fmtid = new Guid("9F4C2855-9F79-4B39-A8D0-E1D42DE1D5F3"),
-                pid = 5
-            };
-
-            propStore.SetValue(ref key, ref pv);
-            propStore.Commit();
-
-            var persistFile = (IPersistFile)link;
-            persistFile.Save(shortcutPath, true);
         }
-
-
-
-        // -------------------- Автозапуск --------------------
 
         private void AddAutostart()
         {

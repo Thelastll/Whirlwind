@@ -5,8 +5,9 @@
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:local="clr-namespace:Whirlwind"
         mc:Ignorable="d"
-        Title="AddUser" Height="250" Width="450" WindowStyle="ToolWindow" WindowStartupLocation="CenterOwner"
-        KeyDown="enter_text_KeyDown">
+        Title="Add/Enter" Height="173" Width="339" WindowStyle="ToolWindow" WindowStartupLocation="CenterOwner"
+        KeyDown="enter_text_KeyDown"
+        PreviewKeyDown="Window_PreviewKeyDown">
     <!-- ="WhirlWindSilverMini.ico"> -->
     <Grid>
         <Grid.RowDefinitions>
@@ -23,24 +24,75 @@
                 <RowDefinition Height="50*"/>
             </Grid.RowDefinitions>
 
-            <TextBlock Text="IP адрес"
+            <TextBlock Text="Имя"
                        HorizontalAlignment="Center"
                        VerticalAlignment="Center"/>
 
-            <TextBlock Text="Имя"
+            <TextBlock Text="IP адрес"
                        Grid.Row="1"
                        HorizontalAlignment="Center"
                        VerticalAlignment="Center"/>
 
-            <TextBox x:Name="add_ip_address"
-                     Grid.Column="1"/>
             <TextBox x:Name="add_name"
-                     Grid.Row="1" Grid.Column="1"/>
+                    Grid.Row="0" Grid.Column="1"
+                     Margin="5 10" FontSize="16"/>
+
+            <StackPanel Grid.Row="1" Grid.Column="1"
+            Orientation="Horizontal"
+            HorizontalAlignment="Center"
+            VerticalAlignment="Center"
+            Margin="0">
+
+                <!-- Ячейка 1 -->
+                <TextBox x:Name="ip1"
+             MinWidth="40"
+             MaxLength="3"
+             PreviewTextInput="IpBox_PreviewTextInput"
+             TextChanged="IpBox_TextChanged"
+             HorizontalContentAlignment="Center"
+             VerticalContentAlignment="Center" FontSize="16"/>
+
+                <TextBlock Text="." FontSize="18" Margin="5 0" VerticalAlignment="Center"/>
+
+                <!-- Ячейка 2 -->
+                <TextBox x:Name="ip2"
+             MinWidth="40"
+             MaxLength="3"
+             PreviewTextInput="IpBox_PreviewTextInput"
+             TextChanged="IpBox_TextChanged"
+             HorizontalContentAlignment="Center"
+             VerticalContentAlignment="Center" FontSize="16"/>
+
+                <TextBlock Text="." FontSize="18" Margin="5 0" VerticalAlignment="Center"/>
+
+                <!-- Ячейка 3 -->
+                <TextBox x:Name="ip3"
+             MinWidth="40"
+             MaxLength="3"
+             PreviewTextInput="IpBox_PreviewTextInput"
+             TextChanged="IpBox_TextChanged"
+             HorizontalContentAlignment="Center"
+             VerticalContentAlignment="Center" FontSize="16"/>
+
+                <TextBlock Text="." FontSize="18" Margin="5 0" VerticalAlignment="Center"/>
+
+                <!-- Ячейка 4 -->
+                <TextBox x:Name="ip4"
+             MinWidth="40"
+             MaxLength="3"
+             PreviewTextInput="IpBox_PreviewTextInput"
+             TextChanged="IpBox_TextChanged"
+             HorizontalContentAlignment="Center"
+             VerticalContentAlignment="Center" FontSize="16"/>
+            </StackPanel>
+
+
+
 
         </Grid>
 
         <Button x:Name="enter_button"
                 Grid.Row="1"
-                Content="Добавить" Click="enter_Click"/>
+                Content="Подтвердить" Click="enter_Click"/>
     </Grid>
 </Window>

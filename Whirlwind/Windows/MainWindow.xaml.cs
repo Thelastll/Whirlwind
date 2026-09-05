@@ -1,9 +1,12 @@
 ﻿using Microsoft.Toolkit.Uwp.Notifications;
 using NAudio.CoreAudioApi;
 using System;
+using System.Collections;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
+using System.Collections.ObjectModel;
 using System.ComponentModel;
+using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using System.Net.Sockets;
@@ -12,13 +15,20 @@ using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 using System.Windows;
+using System.Windows.Automation;
 using System.Windows.Controls;
 using System.Windows.Documents;
 using System.Windows.Input;
+using System.Windows.Interop;
 using System.Windows.Media;
 using System.Windows.Media.Imaging;
+using System.Windows.Shapes;
+using System.Windows.Threading;
 using Whirlwind.Classes;
+using Whirlwind.Interop;
 using Whirlwind.Views;
+using Windows.Devices.Usb;
+using Windows.Media.DialProtocol;
 
 namespace Whirlwind
 {
@@ -26,8 +36,9 @@ namespace Whirlwind
     {
         private Native.GetBytes ListenMessage;
         private Native.GetBytes ListenFiles;
+        private Native.GetBytes ListenUDP;
 
-        public enum NotificationMode
+        internal enum NotificationMode
         {
             Normal,
             Muted,
@@ -35,9 +46,22 @@ namespace Whirlwind
             SoundOnly
         }
 
+        enum DeviceBaseState
+        {
+            Offline,
+            Online
+        }
+
+        enum DeviceOverlayState
+        {
+            None,
+            Red,
+            ThreeDots
+        }
+
         private static List<(byte type, ushort version, byte[] extra_data, string message, string ip_addressee)> SavedMessages = 
             new List<(byte, ushort, byte[], string, string)>();
-        public string CurrentInterlocutor = null;
+        internal string CurrentInterlocutor = null;
         private readonly List<string> attachedFiles = new List<string>();
 
         System.Windows.Forms.NotifyIcon trayIcon = new System.Windows.Forms.NotifyIcon();
@@ -48,66 +72,115 @@ namespace Whirlwind
 
         private bool current_blocked_mode = false;
 
-        record FileChunk(
-            byte protocol_type,
-            ushort protocol_version,
-            string sender_ip,
-            long seconds,
-            byte device_type,
-            byte message_type,
-            byte[] extra_data,
-            string fileName,
-            byte[] fileContent
-        );
+        internal List<DeviceItem> device_item_list = new List<DeviceItem>();
 
-        private readonly ConcurrentQueue<FileChunk> fileQueue = new();
+        Dictionary<int, DeviceBaseState> BaseStates = new();
+
+        Dictionary<int, DeviceOverlayState> OverlayStates = new();
+
+        private readonly Dictionary<int, CancellationTokenSource> BaseTimers = new();
+
+        private readonly Dictionary<int, CancellationTokenSource> OverlayTimers = new();
+
+        private readonly Dictionary<int, DeviceOverlayState> OverlayUnderDots = new();
+
+        private List<string> sent_unviewed_messages = new();
+
+        private List<string> was_read_messages = new();
 
         public MainWindow()
         {
             InitializeComponent();
 
-            this.Icon = new BitmapImage(new Uri(System.IO.Path.Combine(AppContext.BaseDirectory, "../Pictures", "WhirlWindSilverMini.ico")));
-
             Native.init_module();
 
             ListenMessage = on_listen_message;
             ListenFiles = on_listen_file;
-
-            StartFileProcessor();
+            ListenUDP = on_listen_udp;
 
             change_ip_address();
             show_tray_icon();
-        }
 
-        private void StartFileProcessor()
-        {
-            Task.Run(() =>
+            bool red_exist = false;
+            foreach (DeviceItem dev in device_item_list)
             {
-                while (true)
+                if (QueryToSQL.get_received_unviewed_by_ip(dev.Ip))
                 {
-                    if (fileQueue.TryDequeue(out var chunk))
-                    {
-                        handle_file_packet(
-                            chunk.protocol_type,
-                            chunk.protocol_version,
-                            chunk.sender_ip,
-                            chunk.seconds,
-                            chunk.device_type,
-                            chunk.message_type,
-                            chunk.extra_data,
-                            chunk.fileName,
-                            chunk.fileContent
-                        );
-                    }
-                    else
-                    {
-                        Thread.Sleep(1);
-                    }
+                    set_red(dev.Id);
+                    red_exist = true;
                 }
-            });
+            }
+            if (red_exist)
+            {
+                set_overlay_icon(System.IO.Path.GetFullPath("../Pictures/WhirlWindSilverMini.ico"), System.IO.Path.GetFullPath("../Pictures/NoticeDot.ico"));
+                set_tray_icon("../Pictures/WhirlwindSilverMiniNotice.ico");
+            }
+
+            render_device_list();
         }
 
         private void on_listen_message(IntPtr ptr, int len)
+        {
+            byte[] packet = new byte[len];
+            Marshal.Copy(ptr, packet, 0, len);
+
+            byte protocol_type = packet[0];
+            ushort protocol_version = (ushort)((packet[1] << 8) | packet[2]);
+
+            string sender_ip = $"{packet[3]}.{packet[4]}.{packet[5]}.{packet[6]}";
+
+            long seconds;
+            byte device_type, message_type;
+            byte[] extra_data;
+            string message;
+
+            switch (protocol_type)
+            {
+                case 0:
+                    (seconds, extra_data) = NetworkProtocols.on_parse_system_packet(packet);
+
+                    handle_system_packet(sender_ip, protocol_version, seconds, extra_data);
+
+                    break;
+                case 1:
+                    (seconds, device_type, message_type, extra_data, message) = NetworkProtocols.on_parse_text_packet(packet);
+
+                    Native.remove_expected_protocol(protocol_type, protocol_version, NetworkProtocols.ip_to_bytes(sender_ip));
+                     var device = QueryToSQL.get_device_by_ip(sender_ip);
+                    if (device != null) ShowNotification.ShowToast(message, device, device.Muted);
+
+                    show_window_minimized();
+
+                    handle_text_packet(sender_ip, seconds, device_type, message_type, extra_data, message);
+                    break;
+                default:
+                    //Неизвестный тип протокола
+                    break;
+            }
+        }
+
+        private void on_listen_file(IntPtr ptr, int len)
+        {
+            byte[] packet = new byte[len];
+            Marshal.Copy(ptr, packet, 0, len);
+
+            byte protocol_type = packet[0];
+            ushort protocol_version = (ushort)((packet[1] << 8) | packet[2]);
+
+            string sender_ip = $"{packet[3]}.{packet[4]}.{packet[5]}.{packet[6]}";
+
+            var (seconds, device_type, message_type, extra_data, file_name, file_content) = NetworkProtocols.on_parse_file_packet(packet);
+
+            Native.remove_expected_protocol(protocol_type, protocol_version, NetworkProtocols.ip_to_bytes(sender_ip));
+            var device = QueryToSQL.get_device_by_ip(sender_ip);
+            if (device != null) ShowNotification.ShowToast(file_name, device, device.Muted);
+
+            show_window_minimized();
+
+            handle_file_packet(sender_ip, seconds, device_type, message_type, extra_data, file_name, file_content);
+        }
+
+        private void on_listen_udp(IntPtr ptr, int len)
         {
             Task.Run(() =>
             {
@@ -120,50 +193,19 @@ namespace Whirlwind
                 string sender_ip = $"{packet[3]}.{packet[4]}.{packet[5]}.{packet[6]}";
 
                 long seconds;
-                byte device_type, message_type;
                 byte[] extra_data;
-                string message;
 
                 switch (protocol_type)
                 {
                     case 0:
                         (seconds, extra_data) = NetworkProtocols.on_parse_system_packet(packet);
                         handle_system_packet(sender_ip, protocol_version, seconds, extra_data);
-
-                        break;
-                    case 1:
-                        (seconds, device_type, message_type, extra_data, message) = NetworkProtocols.on_parse_text_packet(packet);
-
-                        handle_text_packet(sender_ip, seconds, device_type, message_type, extra_data, message);
-                        Native.remove_expected_protocol(protocol_type, protocol_version, NetworkProtocols.ip_to_bytes(sender_ip));
-                        ShowNotification.ShowToast(QueryToSQL.get_username_by_ip(sender_ip), message, QueryToSQL.get_device_by_ip(sender_ip), QueryToSQL.get_device_muted(sender_ip));
                         break;
                     default:
                         //Неизвестный тип протокола
                         break;
                 }
             });
-        }
-
-        private void on_listen_file(IntPtr ptr, int len)
-        {
-            byte[] packet = new byte[len];
-            Marshal.Copy(ptr, packet, 0, len);
-
-            var (seconds, device_type, message_type, extra_data, fileName, fileContent) =
-                NetworkProtocols.on_parse_file_packet(packet);
-
-            fileQueue.Enqueue(new FileChunk(
-                packet[0],
-                (ushort)((packet[1] << 8) | packet[2]),
-                $"{packet[3]}.{packet[4]}.{packet[5]}.{packet[6]}",
-                seconds,
-                device_type,
-                message_type,
-                extra_data,
-                fileName,
-                fileContent
-            ));
         }
 
         void handle_system_packet(string sender_ip, ushort protocol_version, long seconds, byte[] extra_data)
@@ -173,7 +215,9 @@ namespace Whirlwind
                 case 0:
                     handle_system_packet_v0(sender_ip, seconds, extra_data);
                     break;
-
+                case 1:
+                    handle_system_packet_v1(sender_ip, seconds, extra_data);
+                    break;
                 default:
                     //Неизвестный тип протокола
                     break;
@@ -204,9 +248,9 @@ namespace Whirlwind
 
         void handle_system_request(string sender_ip, byte future_type, ushort future_version)
         {
-            byte[] handshake = new byte[0];
+            byte[] handshake;
 
-            if (QueryToSQL.get_device_blocked(sender_ip) == 0)
+            if (device_item_list.FirstOrDefault(d => d.Ip == sender_ip) == null || device_item_list.FirstOrDefault(d => d.Ip == sender_ip).Blocked == 0)
             {
                 Native.add_expected_protocol(
                     future_type,
@@ -274,40 +318,22 @@ namespace Whirlwind
                     );
                     break;
                 case 2:
-                    byte[] buffer = new byte[1024 * 1024];
+                    send = NetworkProtocols.build_file_packet(
+                        Properties.Settings.Default.ip_sender,
+                        (long)(DateTime.Now - DateTime.MinValue).TotalSeconds,
+                        QueryToSQL.get_device_type(sender_ip),
+                        2,
+                        (version, extra_data),
+                        System.IO.Path.GetFileName(message),
+                        File.ReadAllBytes(message)
+                    );
 
-                    using (var fs = new FileStream(message, FileMode.Open, FileAccess.Read))
-                    {
-                        int read;
-                        while ((read = fs.Read(buffer, 0, buffer.Length)) > 0)
-                        {
-                            byte[] chunk = new byte[read];
-                            Array.Copy(buffer, chunk, read);
-                            bool isLast = fs.Position == fs.Length;
-                            byte message_type = isLast ? (byte)2 : (byte)3;
-
-                            (version, extra_data) = NetworkProtocols.build_file_extra_data_v1(fs.Length, fs.Position);
-                            double percent = fs.Length != 0 ? (double)fs.Position / fs.Length * 100.0 : 50;
-                            update_incoming_file(message, percent, sender_ip);
-
-                            send = NetworkProtocols.build_file_packet(
-                                Properties.Settings.Default.ip_sender,
-                                (long)(DateTime.Now - DateTime.MinValue).TotalSeconds,
-                                QueryToSQL.get_device_type(sender_ip),
-                                message_type,
-                                (version, extra_data),
-                                System.IO.Path.GetFileName(message),
-                                chunk
-                            );
-
-                            Native.send_message(
-                                sender_ip,
-                                Properties.Settings.Default.port_file_sender,
-                                send,
-                                send.Length
-                            );
-                        }
-                    }
+                    Native.send_file_message(
+                        sender_ip,
+                        Properties.Settings.Default.port_file_sender,
+                        send,
+                        send.Length
+                    );
                     break;
             }
 
@@ -336,6 +362,61 @@ namespace Whirlwind
             MessageBox.Show($"Не удалось отправить сообщение. Вы были ЗАБЛОКИРОВАНЫ пользователем {QueryToSQL.get_username_by_ip(sender_ip)}.");
         }
 
+        void handle_system_packet_v1(string sender_ip, long seconds, byte[] extra_data)
+        {
+            var action = NetworkProtocols.on_parse_system_extra_data_v1(extra_data);
+
+            var dbDevice = QueryToSQL.get_device_by_ip(sender_ip);
+            if (dbDevice == null)
+                return;
+
+            switch (action)
+            {
+                case 0:
+                    set_online(dbDevice.Id, 8000);
+                    render_device_list();
+                    break;
+                case 1:
+                    set_dots(dbDevice.Id, 1000);
+                    render_device_list();
+                    break;
+                case 2:
+                    if (!QueryToSQL.get_received_unviewed_by_ip(sender_ip) && was_read_messages.Contains(sender_ip))
+                    {
+                        try
+                        {
+                            byte[] handshake = NetworkProtocols.build_system_packet(
+                                Properties.Settings.Default.ip_sender,
+                                (long)(DateTime.Now - DateTime.MinValue).TotalSeconds,
+                                NetworkProtocols.build_system_extra_data_v1(
+                                    3
+                                )
+                            );
+
+                            Native.send_udp(
+                                sender_ip,
+                                Properties.Settings.Default.port_udp_sender,
+                                handshake,
+                                handshake.Length
+                            );
+
+                            was_read_messages.Remove(sender_ip);
+                        }
+                        catch
+                        {
+                        }
+                    }
+                    break;
+                case 3:
+
+                    QueryToSQL.set_sent_viewed(sender_ip);
+                    load_sent_unviewed();
+                    load_messages(CurrentInterlocutor);
+                    break;
+            }
+
+        }
+
         private void handle_text_packet(string sender_ip, long seconds, byte device_type, byte message_type, byte[] extra_data, string message)
         {
             Dispatcher.InvokeAsync(() =>
@@ -351,51 +432,18 @@ namespace Whirlwind
             });
         }
 
-        private void handle_file_packet(byte protocol_type, ushort protocol_version, string sender_ip, long seconds, byte device_type, byte message_type, byte[] extra_data, string fileName, byte[] fileContent)
+        void handle_file_packet(string sender_ip, long seconds, byte device_type, byte message_type, byte[] extra_data, string fileName, byte[] fileContent)
         {
-            string fileKey = $"{sender_ip}:{fileName}";
-
-            if (!NetworkProtocols.receivingFiles.ContainsKey(fileKey))
-            {
-                string username = QueryToSQL.get_username_by_ip(sender_ip);
-                string dir = $"../Files/{username}";
-                Directory.CreateDirectory(dir);
-
-                string finalName = get_unique_file_name(dir, fileName);
-                string fullPath = Path.Combine(dir, finalName);
-
-                NetworkProtocols.receivingFiles[fileKey] = new List<byte[]> { Encoding.UTF8.GetBytes(fullPath) };
-            }
-
-            string path = Encoding.UTF8.GetString(NetworkProtocols.receivingFiles[fileKey][0]);
-
-                using (var fs = new FileStream(path, FileMode.Append, FileAccess.Write))
-                {
-                    fs.Write(fileContent, 0, fileContent.Length);
-                }
-
-            (long totalSize, long offset) = NetworkProtocols.on_parse_file_extra_data_v1(extra_data);
-            long receivedSize = new FileInfo(path).Length;
-            double percent = totalSize != 0 ? (double)receivedSize / totalSize * 100.0 : 50;
-            update_incoming_file(path, percent, sender_ip);
-
-            if (message_type != 2)
-                return;
-
-            Native.remove_expected_protocol(protocol_type, protocol_version, NetworkProtocols.ip_to_bytes(sender_ip));
-
-            ShowNotification.ShowToast(
-                QueryToSQL.get_username_by_ip(sender_ip),
-                fileName,
-                QueryToSQL.get_device_by_ip(sender_ip),
-                QueryToSQL.get_device_muted(sender_ip)
-            );
-
-            NetworkProtocols.receivingFiles.Remove(fileKey);
-
             Dispatcher.InvokeAsync(() =>
             {
                 string username = QueryToSQL.get_username_by_ip(sender_ip);
+                string dir = $"../Files/{username}";
+
+                Directory.CreateDirectory(dir);
+
+                string finalName = get_unique_file_name(dir, fileName);
+
+                File.WriteAllBytes(System.IO.Path.Combine(dir, finalName), fileContent);
 
                 add_message_to_db(
                     sender_ip,
@@ -403,7 +451,7 @@ namespace Whirlwind
                     DateTime.MinValue.AddSeconds(seconds).ToString("yy-M-dd-HH-mm-ss"),
                     device_type,
                     message_type,
-                    $"{username}/{Path.GetFileName(path)}"
+                    $"{username}/{finalName}"
                 );
             });
         }
@@ -431,6 +479,7 @@ namespace Whirlwind
             {
                 e.Cancel = true;
                 this.Hide();
+                CurrentInterlocutor = null;
             }
         }
 
@@ -569,6 +618,36 @@ namespace Whirlwind
             }
         }
 
+        private void Window_IsVisibleChanged(object sender, DependencyPropertyChangedEventArgs e)
+        {
+            if (this.IsVisible)
+            {
+                ChatTitle.Text = "Личный чат";
+                IpTitle.Text = Properties.Settings.Default.ip_sender;
+                CurrentInterlocutor = Properties.Settings.Default.ip_sender;
+
+                load_devices();
+                load_messages(CurrentInterlocutor);
+                load_sent_unviewed();
+            }
+            else
+            {
+                CurrentInterlocutor = null;
+            }
+        }
+
+        private void show_window_minimized()
+        {
+            Dispatcher.InvokeAsync(() =>
+            {
+                if (Visibility != Visibility.Visible)
+                {
+                    WindowState = WindowState.Minimized;
+                    Show();
+                }
+            });
+        }
+
         private void change_ip_address()
         {
             var enter_window = new EnterWindow();
@@ -592,6 +671,7 @@ namespace Whirlwind
 
             load_devices();
             load_messages(CurrentInterlocutor);
+            load_sent_unviewed();
         }
 
         private void show_tray_icon()
@@ -629,25 +709,98 @@ namespace Whirlwind
             };
         }
 
-        private void load_devices()
+        internal void set_overlay_icon(string baseIconPath, string overlayIconPath = null)
         {
-            DeviceList.Items.Clear();
+            using var baseIcon = new System.Drawing.Icon(baseIconPath);
 
-            foreach (DeviceItem device in QueryToSQL.get_devices())
-            {
-                DeviceList.Items.Add(device);
-            }
+            using var bmp = new System.Drawing.Bitmap(32, 32);
+            using var g = System.Drawing.Graphics.FromImage(bmp);
+
+            g.DrawIcon(baseIcon, 0, 0);
+
+            if (overlayIconPath == null) return;
+
+            using var overlay = new System.Drawing.Bitmap(overlayIconPath);
+
+            int overlaySize = 12;
+
+            int x = 32 - overlaySize;
+            int y = 32 - overlaySize;
+
+            g.DrawImage(overlay, x, y, overlaySize, overlaySize);
+
+            IntPtr hIcon = bmp.GetHicon();
+
+            var hwnd = new WindowInteropHelper(this).Handle;
+
+            Win32.SendMessage(hwnd, Win32.WM_SETICON, Win32.ICON_SMALL, hIcon);
+            Win32.SendMessage(hwnd, Win32.WM_SETICON, Win32.ICON_BIG, hIcon);
+
+            using var ms = new MemoryStream();
+            bmp.Save(ms, System.Drawing.Imaging.ImageFormat.Png);
+            ms.Position = 0;
+
+            this.Icon = BitmapFrame.Create(ms, BitmapCreateOptions.None, BitmapCacheOption.OnLoad);
         }
 
-        public void load_messages(string ip)
+        internal void set_tray_icon(string ip)
         {
-            MessagesPanel.Children.Clear();
+            trayIcon.Icon = new System.Drawing.Icon(ip);
+            var helper = new WindowInteropHelper(this);
+            IntPtr hwnd = helper.Handle;
 
-            if (ip == null) return;
+            var iconHandle = new System.Drawing.Icon(
+                System.IO.Path.GetFullPath(ip)
+            ).Handle;
 
-            foreach (ChatMessage message in QueryToSQL.get_messages(ip))
+            Win32.SendMessage(hwnd, Win32.WM_SETICON, Win32.ICON_SMALL, iconHandle);
+            Win32.SendMessage(hwnd, Win32.WM_SETICON, Win32.ICON_BIG, iconHandle);
+
+            this.Icon = new BitmapImage(new Uri(System.IO.Path.GetFullPath(ip)));
+        }
+
+        internal void load_devices()
+        {
+            device_item_list = QueryToSQL.get_devices();
+            render_device_list();
+        }
+
+        internal void load_messages(string ip)
+        {
+            Dispatcher.InvokeAsync(() =>
             {
-                control_messages(message);
+                MessagesPanel.Children.Clear();
+
+                if (ip == null) return;
+
+                foreach (ChatMessage message in QueryToSQL.get_messages(ip))
+                {
+                    control_messages(message);
+                }
+                for (int i = SavedMessages.Count - 1; i >= 0; i--)
+                {
+                    try
+                    {
+                        var s = SavedMessages[i];
+                        if (s.ip_addressee == ip)
+                        {
+                            control_sending_message(s);
+                        }
+                    }
+                    catch { }
+                }
+            });
+        }
+
+        internal void load_sent_unviewed()
+        {
+            sent_unviewed_messages.Clear();
+            foreach (DeviceItem item in device_item_list)
+            {
+                if (QueryToSQL.get_sent_unviewed_by_ip(item.Ip))
+                {
+                    sent_unviewed_messages.Add(item.Ip);
+                }
             }
         }
 
@@ -667,8 +820,11 @@ namespace Whirlwind
 
         private void start_listening(string ip_address)
         {
-            Native.listening_port(ip_address, Properties.Settings.Default.port_sender, ListenMessage);
-            Native.listening_port(ip_address, Properties.Settings.Default.port_file_sender, ListenFiles);
+            Native.listening_port_messages(ip_address, Properties.Settings.Default.port_sender, ListenMessage);
+            Native.listening_port_files(ip_address, Properties.Settings.Default.port_file_sender, ListenFiles);
+            Native.listening_udp(ip_address, Properties.Settings.Default.port_udp_sender, ListenUDP);
+            sand_online_note();
+            sand_viewed_question();
         }
 
         private void change_sender_ip_address_Click(object sender, RoutedEventArgs e)
@@ -678,13 +834,14 @@ namespace Whirlwind
 
         private void send_button_Click(object sender, RoutedEventArgs e)
         {
+
             bool hasText = !string.IsNullOrWhiteSpace(this.message.Text);
             bool hasFiles = attachedFiles.Count > 0;
 
             if (CurrentInterlocutor == null)
                 return;
 
-            if (CurrentInterlocutor == Properties.Settings.Default.ip_sender && false)
+            if (CurrentInterlocutor == Properties.Settings.Default.ip_sender)
             {
                 if (hasText)
                 {
@@ -771,6 +928,96 @@ namespace Whirlwind
             this.message.Text = "";
             attachedFiles.Clear();
             refresh_attached_files_list();
+            load_messages(CurrentInterlocutor);
+        }
+
+        private void sand_online_note()
+        {
+            Task.Run(async () =>
+            {
+                //int i = 0;
+                while (true)
+                {
+                    try
+                    {
+                        byte[] handshake = NetworkProtocols.build_system_packet(
+                            Properties.Settings.Default.ip_sender,
+                            (long)(DateTime.Now - DateTime.MinValue).TotalSeconds,
+                            NetworkProtocols.build_system_extra_data_v1(
+                                0
+                            )
+                        );
+
+                        foreach (DeviceItem device in device_item_list)
+                        {
+                            Native.send_udp(
+                                device.Ip,
+                                Properties.Settings.Default.port_udp_sender,
+                                handshake,
+                                handshake.Length
+                            );
+                        }
+                    }
+                    catch
+                    {
+                    }
+                    await Task.Delay(4000);
+                }
+            });
+            
+        }
+
+        private void sand_writing_note()
+        {
+            byte[] handshake = NetworkProtocols.build_system_packet(
+                Properties.Settings.Default.ip_sender,
+                (long)(DateTime.Now - DateTime.MinValue).TotalSeconds,
+                NetworkProtocols.build_system_extra_data_v1(
+                    1
+                )
+            );
+
+            Native.send_udp(
+                CurrentInterlocutor,
+                Properties.Settings.Default.port_udp_sender,
+                handshake,
+                handshake.Length
+            );
+        }
+
+        private void sand_viewed_question()
+        {
+            Task.Run(async () =>
+            {
+                while (true)
+                {
+                    foreach (string ip in sent_unviewed_messages)
+                    {
+                        try
+                        {
+                            byte[] handshake = NetworkProtocols.build_system_packet(
+                                Properties.Settings.Default.ip_sender,
+                                (long)(DateTime.Now - DateTime.MinValue).TotalSeconds,
+                                NetworkProtocols.build_system_extra_data_v1(
+                                    2
+                                )
+                            );
+
+                            Native.send_udp(
+                                ip,
+                                Properties.Settings.Default.port_udp_sender,
+                                handshake,
+                                handshake.Length
+                            );
+                        }
+                        catch
+                        {
+                        }
+                    }
+                    await Task.Delay(1000);
+                }
+            });
+
         }
 
         private void add_device_Click(object sender, RoutedEventArgs e)
@@ -782,49 +1029,72 @@ namespace Whirlwind
 
         private void update_device_Click(object sender, RoutedEventArgs e)
         {
-            if (DeviceList.SelectedItem is DeviceItem device)
-            {
-                var devices = QueryToSQL.update_device(device);
+            var menuItem = sender as MenuItem;
+            var contextMenu = menuItem?.Parent as ContextMenu;
+            var border = contextMenu?.PlacementTarget as Border;
+            var device = border?.Tag as DeviceItem;
 
-                if (devices == (null, null, null)) return;
+            if (device == null)
+                return;
 
-                ChatTitle.Text = devices.chat_title;
-                IpTitle.Text = devices.ip_title;
-                CurrentInterlocutor = devices.current_interlocutor;
+            var devices = QueryToSQL.update_device(device);
 
-                load_devices();
-                load_messages(CurrentInterlocutor);
-            }
+            if (devices == (null, null, null))
+                return;
+
+            ChatTitle.Text = devices.chat_title;
+            IpTitle.Text = devices.ip_title;
+            CurrentInterlocutor = devices.current_interlocutor;
+
+            load_devices();
+            load_messages(CurrentInterlocutor);
         }
 
         private void delete_device_Click(object sender, RoutedEventArgs e)
         {
-            if (DeviceList.SelectedItem is DeviceItem device)
+            var menuItem = sender as MenuItem;
+            var contextMenu = menuItem?.Parent as ContextMenu;
+            var border = contextMenu?.PlacementTarget as Border;
+            var device = border?.Tag as DeviceItem;
+
+            if (device == null)
+                return;
+
+            try
             {
-                try
-                {
-                    string username = QueryToSQL.get_username_by_ip(device.Ip);
-                    string dir = System.IO.Path.GetFullPath($"../Files/{username}");
+                string username = QueryToSQL.get_username_by_ip(device.Ip);
+                string dir = System.IO.Path.GetFullPath($"../Files/{username}");
 
-                    if (Directory.Exists(dir))
-                        Directory.Delete(dir, true);
-                }
-                catch (Exception ex)
-                {
-                    MessageBox.Show($"Ошибка при удалении файлов пользователя:\n{ex.Message}",
-                                    "Удаление файлов",
-                                    MessageBoxButton.OK,
-                                    MessageBoxImage.Error);
-                }
-
-                DeviceList.Items.Remove(device);
-
-                QueryToSQL.delete_device(device);
-
-                ChatTitle.Text = "_";
-                IpTitle.Text = "_";
-                CurrentInterlocutor = null;
+                if (Directory.Exists(dir))
+                    Directory.Delete(dir, true);
             }
+            catch (Exception ex)
+            {
+                MessageBox.Show($"Ошибка при удалении файлов пользователя:\n{ex.Message}",
+                                "Удаление файлов",
+                                MessageBoxButton.OK,
+                                MessageBoxImage.Error);
+            }
+
+            QueryToSQL.delete_device(device);
+
+            ChatTitle.Text = "_";
+            IpTitle.Text = "_";
+            CurrentInterlocutor = null;
+
+            if (QueryToSQL.get_received_unviewed())
+            {
+                set_overlay_icon(System.IO.Path.GetFullPath("../Pictures/WhirlWindSilverMini.ico"), System.IO.Path.GetFullPath("../Pictures/NoticeDot.ico"));
+                set_tray_icon("../Pictures/WhirlwindSilverMiniNotice.ico");
+            }
+            else
+            {
+                set_overlay_icon(System.IO.Path.GetFullPath("../Pictures/WhirlWindSilverMini.ico"));
+                set_tray_icon("../Pictures/WhirlwindSilverMini.ico");
+            }
+
+            mute_button.Visibility = Visibility.Collapsed;
+            block_button.Visibility = Visibility.Collapsed;
 
             load_devices();
             load_messages(CurrentInterlocutor);
@@ -833,21 +1103,32 @@ namespace Whirlwind
         private void device_item_Click(object sender, MouseButtonEventArgs e)
         {
             var border = sender as Border;
-            if (border == null)
+            var device = border?.Tag as DeviceItem;
+
+            if (device == null)
                 return;
 
-            if (border.DataContext is DeviceItem device)
-            {
-                ChatTitle.Text = device.Name;
-                IpTitle.Text = device.Ip;
-                CurrentInterlocutor = device.Ip;
-                load_messages(device.Ip);
+            CurrentInterlocutor = device.Ip;
 
-                change_muted_mode(device.Ip);
-                change_blocked_mode(device.Ip);
+            clear_extra(device.Id);
+            load_messages(device.Ip);
+            change_muted_mode(device.Ip);
+            change_blocked_mode(device.Ip);
+            QueryToSQL.set_received_viewed(device.Ip);
+            render_device_list();
+
+            if (QueryToSQL.get_received_unviewed())
+            {
+                set_overlay_icon(System.IO.Path.GetFullPath("../Pictures/WhirlWindSilverMini.ico"), System.IO.Path.GetFullPath("../Pictures/NoticeDot.ico"));
+                set_tray_icon("../Pictures/WhirlwindSilverMiniNotice.ico");
+            }
+            else
+            {
+                set_overlay_icon(System.IO.Path.GetFullPath("../Pictures/WhirlWindSilverMini.ico"));
+                set_tray_icon("../Pictures/WhirlwindSilverMini.ico");
             }
 
-            if (CurrentInterlocutor == Properties.Settings.Default.ip_sender && false)
+            if (CurrentInterlocutor == Properties.Settings.Default.ip_sender)
             {
                 mute_button.Visibility = Visibility.Collapsed;
                 block_button.Visibility = Visibility.Collapsed;
@@ -969,13 +1250,51 @@ namespace Whirlwind
 
             panel.Children.Add(img);
 
-            border.Child = panel;
+            var grid = new Grid();
+            grid.RowDefinitions.Add(new RowDefinition { Height = GridLength.Auto });
+            grid.RowDefinitions.Add(new RowDefinition { Height = GridLength.Auto });
+
+            Grid.SetRow(panel, 0);
+            grid.Children.Add(panel);
+
+            if (msg.IsMyMessage)
+            {
+                var indicator = new TextBlock
+                {
+                    Text = msg.Viewed ? "✔✔" : "✔",
+                    Foreground = Brushes.White,
+                    FontSize = 10,
+                    HorizontalAlignment = HorizontalAlignment.Right,
+                    Margin = new Thickness(0, 2, 3, 0)
+                };
+
+                Grid.SetRow(indicator, 1);
+                grid.Children.Add(indicator);
+            }
+
+            border.Child = grid;
 
             border.Tag = new FileBubbleTag
             {
                 MessageId = msg.Id,
                 FilePath = filePath,
                 ProgressBar = null
+            };
+
+            border.MouseLeftButtonUp += (s, e) =>
+            {
+                try
+                {
+                    System.Diagnostics.Process.Start(new System.Diagnostics.ProcessStartInfo
+                    {
+                        FileName = filePath,
+                        UseShellExecute = true
+                    });
+                }
+                catch (Exception ex)
+                {
+                    MessageBox.Show("Не удалось открыть файл:\n" + ex.Message);
+                }
             };
 
             var contextMenu = new ContextMenu();
@@ -1073,7 +1392,29 @@ namespace Whirlwind
                 ProgressBar = null
             };
 
-            border.Child = stack;
+            var grid = new Grid();
+            grid.RowDefinitions.Add(new RowDefinition { Height = GridLength.Auto });
+            grid.RowDefinitions.Add(new RowDefinition { Height = GridLength.Auto });
+
+            Grid.SetRow(stack, 0);
+            grid.Children.Add(stack);
+
+            if (msg.IsMyMessage)
+            {
+                var indicator = new TextBlock
+                {
+                    Text = msg.Viewed ? "✔✔" : "✔",
+                    Foreground = Brushes.White,
+                    FontSize = 10,
+                    HorizontalAlignment = HorizontalAlignment.Right,
+                    Margin = new Thickness(0, 2, 3, 0)
+                };
+
+                Grid.SetRow(indicator, 1);
+                grid.Children.Add(indicator);
+            }
+
+            border.Child = grid;
 
             border.MouseLeftButtonUp += (s, e) =>
             {
@@ -1205,7 +1546,29 @@ namespace Whirlwind
                 }
             }
 
-            border.Child = textBlock;
+            var grid = new Grid();
+            grid.RowDefinitions.Add(new RowDefinition { Height = GridLength.Auto });
+            grid.RowDefinitions.Add(new RowDefinition { Height = GridLength.Auto });
+
+            Grid.SetRow(textBlock, 0);
+            grid.Children.Add(textBlock);
+
+            if (msg.IsMyMessage)
+            {
+                var indicator = new TextBlock
+                {
+                    Text = msg.Viewed ? "✔✔" : "✔",
+                    Foreground = Brushes.White,
+                    FontSize = 10,
+                    HorizontalAlignment = HorizontalAlignment.Right,
+                    Margin = new Thickness(0, 2, 3, 0)
+                };
+
+                Grid.SetRow(indicator, 1);
+                grid.Children.Add(indicator);
+            }
+
+            border.Child = grid;
 
             var contextMenu = new ContextMenu();
 
@@ -1324,108 +1687,238 @@ namespace Whirlwind
             return border;
         }
 
-        private void update_incoming_file(string path, double percent, string ip)
+        private void control_sending_message((byte type, ushort version, byte[] extra_data, string message, string ip_addressee) saved)
         {
-            if (ip != CurrentInterlocutor) return; 
+            UIElement bubble;
 
-            Dispatcher.InvokeAsync(() =>
+            if (is_existing_path(saved.message))
             {
-                Border bubble = null;
-                Border normalBubble = null;
+                if (is_image_path(saved.message))
+                    bubble = build_sending_image_bubble(saved);
+                else
+                    bubble = build_sending_file_bubble(saved);
+            }
+            else
+            {
+                bubble = build_sending_text_bubble(saved);
+            }
 
-                foreach (var child in MessagesPanel.Children)
-                {
-                    if (child is Border border && border.Tag is FileBubbleTag tag)
-                    {
-                        if (tag.FilePath == path)
-                        {
-                            if (tag.MessageId == -1)
-                                bubble = border;
+            MessagesPanel.Children.Add(bubble);
 
-                            else
-                                normalBubble = border;
-                        }
-                    }
-                }
+            var dateText = new TextBlock
+            {
+                Text = DateTime.Now.ToString("dd/MM/yy HH:mm:ss"),
+                Foreground = Brushes.Gray,
+                FontSize = 10,
+                HorizontalAlignment = HorizontalAlignment.Right,
+                Margin = new Thickness(3, 0, 3, 3)
+            };
 
-                if (bubble == null && normalBubble != null)
-                {
-                    string fileNameOnly = System.IO.Path.GetFileName(path);
+            MessagesPanel.Children.Add(dateText);
 
-                    var msg = new ChatMessage
-                    {
-                        Id = -1,
-                        Text = path,
-                        MessageType = 2,
-                        IsMyMessage = ip == Properties.Settings.Default.ip_sender,
-                        Date = DateTime.Now.ToString("HH:mm")
-                    };
+            MessagesScroll.Dispatcher.InvokeAsync(() =>
+            {
+                MessagesScroll.ScrollToEnd();
+            }, System.Windows.Threading.DispatcherPriority.Background);
+        }
 
-                    bubble = build_downloading_file_bubble(msg, path, fileNameOnly);
+        private Border build_sending_text_bubble((byte type, ushort version, byte[] extra_data, string message, string ip_addressee) saved)
+        {
+            var border = new Border
+            {
+                Background = new SolidColorBrush(Color.FromRgb(0, 122, 204)),
+                Padding = new Thickness(10),
+                Margin = new Thickness(100, 0, 0, 2),
+                CornerRadius = new CornerRadius(5),
+            };
 
-                    if (bubble.Tag is FileBubbleTag tag)
-                    {
-                        tag.ProgressBar.Visibility = Visibility.Visible;
-                        tag.ProgressBar.Value = 0;
-                        tag.TargetIp = CurrentInterlocutor;
-                    }
+            var textBlock = new TextBlock
+            {
+                Foreground = Brushes.White,
+                TextWrapping = TextWrapping.Wrap,
+                Text = saved.message,
+            };
 
-                    MessagesPanel.Children.Add(bubble);
-                }
+            var grid = new Grid();
+            grid.RowDefinitions.Add(new RowDefinition { Height = GridLength.Auto });
+            grid.RowDefinitions.Add(new RowDefinition { Height = GridLength.Auto });
 
-                if (bubble == null && normalBubble == null)
-                {
-                    string fileNameOnly = System.IO.Path.GetFileName(path);
+            Grid.SetRow(textBlock, 0);
+            grid.Children.Add(textBlock);
 
-                    var msg = new ChatMessage
-                    {
-                        Id = -1,
-                        Text = path,
-                        MessageType = 2,
-                        IsMyMessage = ip == Properties.Settings.Default.ip_sender,
-                        Date = DateTime.Now.ToString("HH:mm")
-                    };
+            var indicator = new TextBlock
+            {
+                Text = "●",
+                Foreground = Brushes.White,
+                FontSize = 10,
+                HorizontalAlignment = HorizontalAlignment.Right,
+                Margin = new Thickness(0, 2, 3, 0)
+            };
 
-                    bubble = build_downloading_file_bubble(msg, path, fileNameOnly);
+            Grid.SetRow(indicator, 1);
+            grid.Children.Add(indicator);
 
-                    if (bubble.Tag is FileBubbleTag tag)
-                    {
-                        tag.ProgressBar.Visibility = Visibility.Visible;
-                        tag.ProgressBar.Value = 0;
-                    }
+            border.Child = grid;
 
-                    MessagesPanel.Children.Add(bubble);
-                }
 
-                if (bubble?.Tag is FileBubbleTag bubbleTag)
-                {
-                    var pb = bubbleTag.ProgressBar;
+            return border;
+        }
 
-                    if (pb != null)
-                    {
-                        pb.Visibility = Visibility.Visible;
-                        pb.Value = percent;
+        private Border build_sending_file_bubble((byte type, ushort version, byte[] extra_data, string message, string ip_addressee) saved)
+        {
+            var border = new Border
+            {
+                Background = new SolidColorBrush(Color.FromRgb(0, 122, 204)),
+                Padding = new Thickness(10),
+                Margin = new Thickness(100, 0, 0, 2),
+                CornerRadius = new CornerRadius(5),
+            };
 
-                        if (percent >= 100)
-                            pb.Visibility = Visibility.Collapsed;
-                    }
-                }
+            var stack = new StackPanel { Orientation = Orientation.Vertical };
 
-                if (percent >= 100)
-                {
-                    if (bubble?.Tag is FileBubbleTag tag && tag.MessageId == -1)
-                    {
-                        MessagesPanel.Children.Remove(bubble);
-                    }
-                }
+            var fileRow = new StackPanel { Orientation = Orientation.Horizontal };
+
+            fileRow.Children.Add(new TextBlock
+            {
+                Text = "📄",
+                FontSize = 20,
+                Margin = new Thickness(0, 0, 8, 0)
             });
+
+            fileRow.Children.Add(new TextBlock
+            {
+                Text = System.IO.Path.GetFileName(saved.message),
+                Foreground = Brushes.White,
+                FontSize = 14,
+                TextWrapping = TextWrapping.Wrap
+            });
+
+            stack.Children.Add(fileRow);
+
+            var grid = new Grid();
+            grid.RowDefinitions.Add(new RowDefinition { Height = GridLength.Auto });
+            grid.RowDefinitions.Add(new RowDefinition { Height = GridLength.Auto });
+
+            Grid.SetRow(stack, 0);
+            grid.Children.Add(stack);
+
+            var indicator = new TextBlock
+            {
+                Text = "●",
+                Foreground = Brushes.White,
+                FontSize = 10,
+                HorizontalAlignment = HorizontalAlignment.Right,
+                Margin = new Thickness(0, 2, 3, 0)
+            };
+
+            Grid.SetRow(indicator, 1);
+            grid.Children.Add(indicator);
+
+            border.Child = grid;
+
+            return border;
+        }
+
+        private Border build_sending_image_bubble((byte type, ushort version, byte[] extra_data, string message, string ip_addressee) saved)
+        {
+            var border = new Border
+            {
+                Background = new SolidColorBrush(Color.FromRgb(0, 122, 204)),
+                Padding = new Thickness(4),
+                Margin = new Thickness(80, 0, 0, 2),
+                CornerRadius = new CornerRadius(3),
+                HorizontalAlignment = HorizontalAlignment.Right
+            };
+
+            var panel = new StackPanel { Orientation = Orientation.Vertical };
+
+            var img = new Image
+            {
+                Stretch = Stretch.Uniform,
+                Margin = new Thickness(0),
+                MaxWidth = 350,
+                MaxHeight = 350
+            };
+
+            try
+            {
+                BitmapImage bmp = new BitmapImage();
+                bmp.BeginInit();
+                bmp.CacheOption = BitmapCacheOption.OnLoad;
+                bmp.UriSource = new Uri(saved.message, UriKind.Absolute);
+                bmp.EndInit();
+
+                img.Source = bmp;
+            }
+            catch
+            {
+                img.Source = null;
+            }
+
+            panel.Children.Add(img);
+
+            var grid = new Grid();
+            grid.RowDefinitions.Add(new RowDefinition { Height = GridLength.Auto });
+            grid.RowDefinitions.Add(new RowDefinition { Height = GridLength.Auto });
+
+            Grid.SetRow(panel, 0);
+            grid.Children.Add(panel);
+
+            var indicator = new TextBlock
+            {
+                Text = "●",
+                Foreground = Brushes.White,
+                FontSize = 10,
+                HorizontalAlignment = HorizontalAlignment.Right,
+                Margin = new Thickness(0, 2, 3, 0)
+            };
+
+            Grid.SetRow(indicator, 1);
+            grid.Children.Add(indicator);
+
+            border.Child = grid;
+
+            return border;
+        }
+
+        private bool is_image_path(string path)
+        {
+            string ext = System.IO.Path.GetExtension(path).ToLower();
+            string[] imageExts = { ".jpg", ".jpeg", ".png", ".bmp", ".gif", ".webp" };
+            return imageExts.Contains(ext);
+        }
+
+        private bool is_existing_path(string path)
+        {
+            return File.Exists(path);
         }
 
         private void add_message_to_db(string sender, string addressee, string seconds, byte device_type, byte message_type, string message)
         {
-            QueryToSQL.add_message_to_db(sender, addressee, seconds, device_type, message_type, message);
+            if (sender == Properties.Settings.Default.ip_sender && CurrentInterlocutor != sender)
+            {
+                QueryToSQL.add_message_to_db(sender, addressee, seconds, device_type, message_type, message, 0);
+                load_sent_unviewed();
+            }
+            else if (CurrentInterlocutor == null || CurrentInterlocutor != sender)
+            {
+                QueryToSQL.add_message_to_db(sender, addressee, seconds, device_type, message_type, message, 0);
 
-            load_devices();
+                set_red(QueryToSQL.get_device_by_ip(sender).Id);
+                set_overlay_icon(System.IO.Path.GetFullPath("../Pictures/WhirlWindSilverMini.ico"), System.IO.Path.GetFullPath("../Pictures/NoticeDot.ico"));
+                set_tray_icon("../Pictures/WhirlwindSilverMiniNotice.ico");
+
+                if (!was_read_messages.Contains(sender))
+                    was_read_messages.Add(sender);
+            }
+            else
+            {
+                QueryToSQL.add_message_to_db(sender, addressee, seconds, device_type, message_type, message, 1);
+                if (!was_read_messages.Contains(sender))
+                    was_read_messages.Add(sender);
+            }
+
+            render_device_list();
             load_messages(CurrentInterlocutor);
         }
 
@@ -1528,6 +2021,7 @@ namespace Whirlwind
                 case NotificationMode.Normal:
                     current_muted_mode = NotificationMode.Muted;
                     QueryToSQL.set_device_muted(CurrentInterlocutor, 1);
+
                     mute_button.Content = "🔇";
                     mute_button.ToolTip = "Уведомления заглушены";
                     break;
@@ -1536,6 +2030,7 @@ namespace Whirlwind
                 case NotificationMode.Muted:
                     current_muted_mode = NotificationMode.SoundOnly;
                     QueryToSQL.set_device_muted(CurrentInterlocutor, 2);
+
                     mute_button.Content = "🔔";
                     mute_button.ToolTip = "Только звуки включены";
                     break;
@@ -1544,6 +2039,7 @@ namespace Whirlwind
                 case NotificationMode.SoundOnly:
                     current_muted_mode = NotificationMode.Disabled;
                     QueryToSQL.set_device_muted(CurrentInterlocutor, 3);
+
                     mute_button.Content = "🚫";
                     mute_button.ToolTip = "Уведомления отключены";
                     break;
@@ -1552,10 +2048,13 @@ namespace Whirlwind
                 case NotificationMode.Disabled:
                     current_muted_mode = NotificationMode.Normal;
                     QueryToSQL.set_device_muted(CurrentInterlocutor, 0);
+
                     mute_button.Content = "🔊";
                     mute_button.ToolTip = "Уведомления включены";
                     break;
+
             }
+            load_devices();
         }
 
         private void block_button_Click(object sender, RoutedEventArgs e)
@@ -1576,11 +2075,12 @@ namespace Whirlwind
 
                 QueryToSQL.set_device_blocked(CurrentInterlocutor, false);
             }
+            load_devices();
         }
 
-        public void change_muted_mode(string ip)
+        internal void change_muted_mode(string ip)
         {
-            switch (QueryToSQL.get_device_muted(ip))
+            switch (device_item_list.FirstOrDefault(d => d.Ip == ip).Muted)
             {
                 case 0:
                     current_muted_mode = NotificationMode.Normal;
@@ -1605,15 +2105,14 @@ namespace Whirlwind
             }
         }
 
-        public void change_blocked_mode(string ip)
+        internal void change_blocked_mode(string ip)
         {
-            if (QueryToSQL.get_device_blocked(ip) == 1)
+            if (device_item_list.FirstOrDefault(d => d.Ip == ip).Blocked == 1)
             {
                 block_button.Content = "🔓";
                 block_button.ToolTip = "Разблокировать";
 
                 current_blocked_mode = true;
-                QueryToSQL.set_device_blocked(CurrentInterlocutor, true);
             }
             else
             {
@@ -1621,8 +2120,246 @@ namespace Whirlwind
                 block_button.ToolTip = "Заблокировать";
 
                 current_blocked_mode = false;
-                QueryToSQL.set_device_blocked(CurrentInterlocutor, false);
             }
+        }
+
+        private DateTime _lastWriteNoteTime = DateTime.MinValue;
+
+        private void message_TextChanged(object sender, TextChangedEventArgs e)
+        {
+            if (CurrentInterlocutor == Properties.Settings.Default.ip_sender) return;
+
+            var now = DateTime.Now;
+
+            if ((now - _lastWriteNoteTime).TotalMilliseconds < 500)
+                return;
+
+            _lastWriteNoteTime = now;
+
+            sand_writing_note();
+        }
+
+        internal void set_online(int id, int ms = 3000)
+        {
+            BaseStates[id] = DeviceBaseState.Online;
+
+            if (BaseTimers.TryGetValue(id, out var old))
+                old.Cancel();
+
+            var cts = new CancellationTokenSource();
+            BaseTimers[id] = cts;
+            var token = cts.Token;
+
+            Task.Run(async () =>
+            {
+                try
+                {
+                    await Task.Delay(ms, token);
+
+                    BaseStates[id] = DeviceBaseState.Offline;
+                    render_device_list();
+                }
+                catch { }
+            });
+        }
+
+        internal void set_red(int id)
+        {
+            OverlayStates[id] = DeviceOverlayState.Red;
+        }
+
+        internal void clear_extra(int id)
+        {
+            OverlayStates[id] = DeviceOverlayState.None;
+        }
+
+        internal void set_dots(int id, int ms = 2000)
+        {
+            if (!OverlayUnderDots.ContainsKey(id))
+            {
+                var prev = OverlayStates.TryGetValue(id, out var p)
+                    ? p
+                    : DeviceOverlayState.None;
+
+                OverlayUnderDots[id] = prev;
+            }
+
+            OverlayStates[id] = DeviceOverlayState.ThreeDots;
+
+            if (OverlayTimers.TryGetValue(id, out var old))
+                old.Cancel();
+
+            var cts = new CancellationTokenSource();
+            OverlayTimers[id] = cts;
+            var token = cts.Token;
+
+            Task.Run(async () =>
+            {
+                try
+                {
+                    await Task.Delay(ms, token);
+
+                    if (OverlayStates[id] == DeviceOverlayState.ThreeDots)
+                    {
+                        var previous = OverlayUnderDots.TryGetValue(id, out var prev)
+                            ? prev
+                            : DeviceOverlayState.None;
+
+                        if (previous == DeviceOverlayState.Red)
+                            OverlayStates[id] = DeviceOverlayState.Red;
+                        else
+                            OverlayStates[id] = DeviceOverlayState.None;
+                    }
+
+                    OverlayUnderDots.Remove(id);
+
+                    render_device_list();
+                }
+                catch { }
+            });
+        }
+
+        internal void render_device_list()
+        {
+            Dispatcher.InvokeAsync(() =>
+            {
+                DeviceList.Items.Clear();
+
+                foreach (var device in device_item_list)
+                {
+                    DeviceList.Items.Add(create_device_row(device));
+                }
+                render_header_state(CurrentInterlocutor);
+            });
+        }
+
+        public void render_header_state(string ip)
+        {
+            var device = device_item_list.FirstOrDefault(d => d.Ip == ip);
+            if (device == null)
+            {
+                HeaderEllipse.Fill = Brushes.Transparent;
+                HeaderEllipse.Stroke = Brushes.Silver;
+                return;
+            }
+                
+            var baseState = BaseStates.TryGetValue(device.Id, out var b)
+                ? b
+                : DeviceBaseState.Offline;
+
+            var overlayState = OverlayStates.TryGetValue(device.Id, out var o)
+                ? o
+                : DeviceOverlayState.None;
+
+            if (baseState == DeviceBaseState.Online)
+            {
+                HeaderEllipse.Fill = Brushes.LimeGreen;
+                HeaderEllipse.Stroke = Brushes.LimeGreen;
+            }
+            else
+            {
+                HeaderEllipse.Fill = Brushes.Transparent;
+                HeaderEllipse.Stroke = Brushes.Silver;
+            }
+
+            switch (overlayState)
+            {
+                case DeviceOverlayState.Red:
+                    HeaderEllipse.Fill = Brushes.Red;
+                    HeaderEllipse.Stroke = Brushes.Red;
+                    break;
+
+                case DeviceOverlayState.ThreeDots:
+                    HeaderEllipse.Fill = (Brush)FindResource("DotsBrush");
+                    HeaderEllipse.Stroke = Brushes.Transparent;
+                    break;
+            }
+
+            ChatTitle.Text = device.Name;
+            IpTitle.Text = device.Ip;
+        }
+
+        private Border create_device_row(DeviceItem device)
+        {
+            var baseState = BaseStates.TryGetValue(device.Id, out var b)
+                ? b
+                : DeviceBaseState.Offline;
+
+            var overlayState = OverlayStates.TryGetValue(device.Id, out var o)
+                ? o
+                : DeviceOverlayState.None;
+
+            var ellipse = new Ellipse
+            {
+                Width = 18,
+                Height = 18,
+                StrokeThickness = 2,
+                VerticalAlignment = VerticalAlignment.Center,
+                HorizontalAlignment = HorizontalAlignment.Center
+            };
+
+            if (baseState == DeviceBaseState.Online)
+            {
+                ellipse.Fill = Brushes.LimeGreen;
+                ellipse.Stroke = Brushes.LimeGreen;
+            }
+            else
+            {
+                ellipse.Fill = Brushes.Transparent;
+                ellipse.Stroke = Brushes.Silver;
+            }
+
+            switch (overlayState)
+            {
+                case DeviceOverlayState.Red:
+                    ellipse.Fill = Brushes.Red;
+                    ellipse.Stroke = Brushes.Red;
+                    break;
+
+                case DeviceOverlayState.ThreeDots:
+                    ellipse.Fill = (Brush)FindResource("DotsBrush");
+                    ellipse.Stroke = Brushes.Transparent;
+                    break;
+            }
+
+            var stack = new StackPanel();
+            stack.Children.Add(new TextBlock { Text = device.Name, Foreground = Brushes.White, FontSize = 16 });
+            stack.Children.Add(new TextBlock { Text = device.Ip, Foreground = Brushes.Gray, FontSize = 12 });
+
+            var grid = new Grid();
+            grid.ColumnDefinitions.Add(new ColumnDefinition());
+            grid.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(20) });
+
+            Grid.SetColumn(stack, 0);
+            Grid.SetColumn(ellipse, 1);
+
+            grid.Children.Add(stack);
+            grid.Children.Add(ellipse);
+
+            var contextMenu = new ContextMenu();
+
+            var updateItem = new MenuItem { Header = "Изменить" };
+            updateItem.Click += update_device_Click;
+
+            var deleteItem = new MenuItem { Header = "Удалить" };
+            deleteItem.Click += delete_device_Click;
+
+            contextMenu.Items.Add(updateItem);
+            contextMenu.Items.Add(deleteItem);
+
+            var border = new Border
+            {
+                Padding = new Thickness(10),
+                Margin = new Thickness(0, 0, 0, 5),
+                Background = new SolidColorBrush(Color.FromRgb(58, 58, 58)),
+                Child = grid,
+                Tag = device,
+                ContextMenu = contextMenu
+            };
+
+            border.MouseLeftButtonUp += device_item_Click;
+
+            return border;
         }
     }
 }

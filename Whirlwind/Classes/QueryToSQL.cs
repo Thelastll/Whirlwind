@@ -10,7 +10,7 @@ namespace Whirlwind
 {
     internal class QueryToSQL
     {
-        public static void set_default_ip_address()
+        internal static void set_default_ip_address()
         {
             try
             {
@@ -32,7 +32,7 @@ namespace Whirlwind
             }
         }
 
-        public static List<DeviceItem> get_devices()
+        internal static List<DeviceItem> get_devices()
         {
             var fin = new List<DeviceItem>();
 
@@ -42,7 +42,7 @@ namespace Whirlwind
                 {
                     connection.Open();
 
-                    string query = $@"SELECT id, name, ip FROM Device";
+                    string query = $@"SELECT id, name, ip, muted, blocked FROM Device";
 
                     using (var command = new SqliteCommand(query, connection))
                     using (var reader = command.ExecuteReader())
@@ -53,7 +53,9 @@ namespace Whirlwind
                             {
                                 Id = reader.GetInt32(0),
                                 Name = reader.GetString(1),
-                                Ip = reader.GetString(2)
+                                Ip = reader.GetString(2),
+                                Muted = (sbyte)reader.GetByte(3),
+                                Blocked = (sbyte)reader.GetByte(4),
                             });
                         }
                     }
@@ -67,7 +69,7 @@ namespace Whirlwind
             return fin;
         }
 
-        public static DeviceItem get_device_by_ip(string ip)
+        internal static DeviceItem get_device_by_ip(string ip)
         {
             try
             {
@@ -75,7 +77,7 @@ namespace Whirlwind
                 {
                     connection.Open();
 
-                    string query = $@"SELECT id, name, ip FROM Device WHERE ip = '{ip}' LIMIT 1";
+                    string query = $@"SELECT id, name, ip, muted, blocked FROM Device WHERE ip = '{ip}' LIMIT 1";
 
                     using (var command = new SqliteCommand(query, connection))
                     using (var reader = command.ExecuteReader())
@@ -86,7 +88,9 @@ namespace Whirlwind
                             {
                                 Id = reader.GetInt32(0),
                                 Name = reader.GetString(1),
-                                Ip = reader.GetString(2)
+                                Ip = reader.GetString(2),
+                                Muted = (sbyte)reader.GetByte(3),
+                                Blocked = (sbyte)reader.GetByte(4),
                             };
                         }
                     }
@@ -100,7 +104,7 @@ namespace Whirlwind
             return null;
         }
 
-        public static List<ChatMessage> get_messages(string ip)
+        internal static List<ChatMessage> get_messages(string ip)
         {
             var fin = new List<ChatMessage>();
 
@@ -119,6 +123,7 @@ namespace Whirlwind
                         Message.text,
                         Message.date,
                         Message.message_type,
+                        Message.viewed,
                         (SELECT ip FROM Device WHERE ID = Message.sender) AS sender_ip
                     FROM Message
                     WHERE 
@@ -133,6 +138,7 @@ namespace Whirlwind
                         Message.text,
                         Message.date,
                         Message.message_type,
+                        Message.viewed,
                         (SELECT ip FROM Device WHERE ID = Message.sender) AS sender_ip
                     FROM Message
                     WHERE 
@@ -146,7 +152,7 @@ namespace Whirlwind
                     {
                         while (reader.Read())
                         {
-                            string sender_ip = reader.GetString(4);
+                            string sender_ip = reader.GetString(5);
                             var p = reader.GetString(2).Split('-');
 
                             fin.Add(new ChatMessage
@@ -155,9 +161,11 @@ namespace Whirlwind
                                 Text = reader.GetString(1),
                                 Date = $"{p[2]}/{p[1]}/{p[0]} {p[3]}:{p[4]}:{p[5]}",
                                 MessageType = reader.GetInt32(3),
+                                Viewed = reader.GetInt32(4) > 0,
                                 IsMyMessage = sender_ip == Properties.Settings.Default.ip_sender
                             });
                         }
+
                     }
                 }
             }
@@ -169,7 +177,7 @@ namespace Whirlwind
             return fin;
         }
 
-        public static string get_message_text(int id)
+        internal static string get_message_text(int id)
         {
             try
             {
@@ -192,7 +200,7 @@ namespace Whirlwind
             }
         }
 
-        public static byte get_device_type(string ip)
+        internal static byte get_device_type(string ip)
         {
             try
             {
@@ -215,7 +223,7 @@ namespace Whirlwind
             }
         }
 
-        public static bool IsValidDirectoryName(string name)
+        internal static bool is_valid_directory_name(string name)
         {
             if (string.IsNullOrWhiteSpace(name))
                 return false;
@@ -240,7 +248,7 @@ namespace Whirlwind
 
 
 
-        public static void add_device()
+        internal static void add_device()
         {
             try
             {
@@ -253,7 +261,7 @@ namespace Whirlwind
                 if (ip == null || name == null)
                     return;
 
-                if (!IsValidDirectoryName(name))
+                if (!is_valid_directory_name(name))
                 {
                     MessageBox.Show(
                         "Имя устройства содержит недопустимые символы.\n" +
@@ -291,14 +299,15 @@ namespace Whirlwind
 
 
 
-        public static (string chat_title, string ip_title, string current_interlocutor) update_device(DeviceItem device)
+        internal static (string chat_title, string ip_title, string current_interlocutor) update_device(DeviceItem device)
         {
             try
             {
                 int id = device.Id;
                 var add_user_window = new AddUser();
 
-                add_user_window.add_ip_address.Text = device.Ip;
+                add_user_window.SetIp(device.Ip);
+
                 add_user_window.add_name.Text = device.Name;
 
                 add_user_window.ShowDialog();
@@ -309,7 +318,7 @@ namespace Whirlwind
                 if (newIp == null || newName == null)
                     return (null, null, null);
 
-                if (!IsValidDirectoryName(newName))
+                if (!is_valid_directory_name(newName))
                 {
                     MessageBox.Show(
                         "Новое имя устройства содержит недопустимые символы.\n" +
@@ -358,7 +367,7 @@ namespace Whirlwind
 
 
 
-        public static void delete_device(DeviceItem device)
+        internal static void delete_device(DeviceItem device)
         {
             try
             {
@@ -392,7 +401,7 @@ namespace Whirlwind
             }
         }
 
-        public static void add_message_to_db(string sender, string addressee, string seconds, byte device_type, byte message_type, string message)
+        internal static void add_message_to_db(string sender, string addressee, string seconds, byte device_type, byte message_type, string message, sbyte viewed)
         {
             try
             {
@@ -433,13 +442,14 @@ namespace Whirlwind
                             {
                                 cmd.ExecuteNonQuery();
                             }
+                            App.MainWindowInstance.load_devices();
                         }
                     }
 
-                    string insert = $@"INSERT INTO Message(sender, addressee, message_type, text, date)
+                    string insert = $@"INSERT INTO Message(sender, addressee, message_type, text, date, viewed)
                                VALUES ((SELECT ID FROM Device WHERE ip = '{sender}'), 
                                (SELECT ID FROM Device WHERE ip = '{addressee}'), '{message_type}', '{message}', 
-                               '{seconds}')";
+                               '{seconds}', '{viewed}')";
 
                     using (var cmd = new SqliteCommand(insert, connection))
                     {
@@ -453,8 +463,7 @@ namespace Whirlwind
             }
         }
 
-
-        public static void delete_message(int id)
+        internal static void delete_message(int id)
         {
             try
             {
@@ -475,7 +484,7 @@ namespace Whirlwind
             }
         }
 
-        public static string get_username_by_ip(string ip)
+        internal static string get_username_by_ip(string ip)
         {
             try
             {
@@ -519,7 +528,7 @@ namespace Whirlwind
                     {
                         cmd.ExecuteNonQuery();
                     }
-
+                    App.MainWindowInstance.load_devices();
                     return finalName;
                 }
             }
@@ -529,30 +538,7 @@ namespace Whirlwind
             }
         }
 
-        public static sbyte get_device_muted(string ip)
-        {
-            try
-            {
-                string query = $@"SELECT muted FROM Device WHERE ip = '{ip}' LIMIT 1";
-
-                using (var connection = new SqliteConnection(Properties.Settings.Default.connection_string))
-                {
-                    connection.Open();
-
-                    using (var command = new SqliteCommand(query, connection))
-                    {
-                        object result = command.ExecuteScalar();
-                        return sbyte.Parse(result.ToString());
-                    }
-                }
-            }
-            catch
-            {
-                return 2;
-            }
-        }
-
-        public static void set_device_muted(string ip, sbyte muted)
+        internal static void set_device_muted(string ip, sbyte muted)
         {
             try
             {
@@ -574,30 +560,7 @@ namespace Whirlwind
             }
         }
 
-        public static sbyte get_device_blocked(string ip)
-        {
-            try
-            {
-                string query = $@"SELECT blocked FROM Device WHERE ip = '{ip}' LIMIT 1";
-
-                using (var connection = new SqliteConnection(Properties.Settings.Default.connection_string))
-                {
-                    connection.Open();
-
-                    using (var command = new SqliteCommand(query, connection))
-                    {
-                        object result = command.ExecuteScalar();
-                        return sbyte.Parse(result.ToString());
-                    }
-                }
-            }
-            catch
-            {
-                return 2;
-            }
-        }
-
-        public static void set_device_blocked(string ip, bool blocked)
+        internal static void set_device_blocked(string ip, bool blocked)
         {
             sbyte set = blocked ? (sbyte)1 : (sbyte)0;
 
@@ -619,6 +582,130 @@ namespace Whirlwind
             {
                 MessageBox.Show($"Ошибка SQL в set_default_ip_address:\n{ex.Message}");
             }
+        }
+
+        internal static bool get_received_unviewed_by_ip(string ip)
+        {
+            try
+            {
+                using (var connection = new SqliteConnection(Properties.Settings.Default.connection_string))
+                {
+                    connection.Open();
+
+                    string query = $@"SELECT 1 FROM Message WHERE sender = (SELECT ID FROM Device WHERE ip = '{ip}') 
+                                      and addressee = (SELECT ID FROM Device WHERE ip = '{Properties.Settings.Default.ip_sender}') and viewed = '0' LIMIT 1";
+
+                    using (var command = new SqliteCommand(query, connection))
+                    {
+                        object result = command.ExecuteScalar();
+                        return result == null ? false : true;
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show($"Ошибка SQL в get_viewed_by_ip:\n{ex.Message}");
+            }
+
+            return false;
+        }
+
+        internal static bool get_received_unviewed()
+        {
+            try
+            {
+                using (var connection = new SqliteConnection(Properties.Settings.Default.connection_string))
+                {
+                    connection.Open();
+
+                    string query = $@"SELECT 1 FROM Message WHERE addressee = (SELECT ID FROM Device WHERE ip = '{Properties.Settings.Default.ip_sender}') 
+                                    and viewed = '0' LIMIT 1";
+
+                    using (var command = new SqliteCommand(query, connection))
+                    {
+                        object result = command.ExecuteScalar();
+                        return result == null ? false : true;
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show($"Ошибка SQL в get_viewed_by_ip:\n{ex.Message}");
+            }
+
+            return false;
+        }
+
+        internal static void set_received_viewed(string ip)
+        {
+            try
+            {
+                using (var connection = new SqliteConnection(Properties.Settings.Default.connection_string))
+                {
+                    connection.Open();
+
+                    string update = $@"UPDATE Message SET viewed = '1' WHERE sender = (SELECT ID FROM Device WHERE ip = '{ip}') 
+                                        and addressee = (SELECT ID FROM Device WHERE ip = '{Properties.Settings.Default.ip_sender}') and viewed = '0'";
+
+                    using (var cmd = new SqliteCommand(update, connection))
+                    {
+                        cmd.ExecuteNonQuery();
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show($"Ошибка SQL в set_default_ip_address:\n{ex.Message}");
+            }
+        }
+
+        internal static void set_sent_viewed(string ip)
+        {
+            try
+            {
+                using (var connection = new SqliteConnection(Properties.Settings.Default.connection_string))
+                {
+                    connection.Open();
+
+                    string update = $@"UPDATE Message SET viewed = '1' WHERE sender = (SELECT ID FROM Device WHERE ip = '{Properties.Settings.Default.ip_sender}') 
+                                        and addressee = (SELECT ID FROM Device WHERE ip = '{ip}') and viewed = '0'";
+
+                    using (var cmd = new SqliteCommand(update, connection))
+                    {
+                        cmd.ExecuteNonQuery();
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show($"Ошибка SQL в set_default_ip_address:\n{ex.Message}");
+            }
+        }
+
+        internal static bool get_sent_unviewed_by_ip(string ip)
+        {
+            try
+            {
+                using (var connection = new SqliteConnection(Properties.Settings.Default.connection_string))
+                {
+                    connection.Open();
+
+                    string query = $@"SELECT 1 FROM Message WHERE sender = (SELECT ID FROM Device WHERE ip = '{Properties.Settings.Default.ip_sender}') 
+                                      and addressee = (SELECT ID FROM Device WHERE ip = '{ip}') and viewed = '0' LIMIT 1";
+
+                    using (var command = new SqliteCommand(query, connection))
+                    {
+                        object result = command.ExecuteScalar();
+                        return result == null ? false : true;
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show($"Ошибка SQL в get_viewed_by_ip:\n{ex.Message}");
+            }
+
+            return false;
         }
     }
 }

@@ -6,7 +6,7 @@ namespace Whirlwind.Classes
 {
     internal static class ShowNotification
     {
-        public static void ShowToast(string name, string message, Views.DeviceItem device, sbyte muted = -1)
+        internal static void ShowToast(string message, Views.DeviceItem device, sbyte muted = -1)
         {
             if (muted == 3 || device.Ip == App.MainWindowInstance.CurrentInterlocutor) return;
 
@@ -16,10 +16,8 @@ namespace Whirlwind.Classes
             }
             if (muted != 2) {
                 var content = new ToastContentBuilder()
-                    .AddText(name)
+                    .AddText(device.Name)
                     .AddText(message)
-                    .AddArgument("action", "open")
-                    .AddArgument("deviceId", device.Id)
                     .GetToastContent();
 
                 var toast = new ToastNotification(content.GetXml())

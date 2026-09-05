@@ -7,6 +7,7 @@
         public string Date { get; set; }
         public int MessageType { get; set; }
         public bool IsMyMessage { get; set; }
+        public bool Viewed { get; set; }
 
         public string DisplayText
         {

@@ -27,7 +27,10 @@ namespace Whirlwind
         public static extern void free_rust(IntPtr ptr, int len);
 
         [DllImport(Dll, CallingConvention = CallingConvention.Cdecl)]
-        public static extern void listening_port(string ip, string port, GetBytes cb);
+        public static extern void listening_port_messages(string ip, string port, GetBytes cb);
+
+        [DllImport(Dll, CallingConvention = CallingConvention.Cdecl)]
+        public static extern void listening_port_files(string ip, string port, GetBytes cb);
 
         [DllImport(Dll, CallingConvention = CallingConvention.Cdecl)]
         public static extern void test_ip_port_sender(string ip, string port, GetBytes cb_ok, GetBytes cb_err);
@@ -36,6 +39,15 @@ namespace Whirlwind
         public static extern unsafe void send_message(string ip, string port, byte[] data, int len);
 
         [DllImport(Dll, CallingConvention = CallingConvention.Cdecl)]
+        public static extern unsafe void send_file_message(string ip, string port, byte[] data, int len);
+
+        [DllImport(Dll, CallingConvention = CallingConvention.Cdecl)]
         public static extern void set_timeouts(ulong connect_ms, ulong write_ms);
+
+        [DllImport(Dll, CallingConvention = CallingConvention.Cdecl)]
+        public static extern void listening_udp(string ip, string port, GetBytes cb);
+
+        [DllImport(Dll, CallingConvention = CallingConvention.Cdecl)]
+        public static extern unsafe void send_udp(string ip, string port, byte[] data, int len);
     }
 }

@@ -14,7 +14,7 @@
     <BaseOutputPath>bin\</BaseOutputPath>
     <OutputPath>../Whirlwind</OutputPath>
     <AppendTargetFrameworkToOutputPath>false</AppendTargetFrameworkToOutputPath>
-    <ApplicationIcon>../Pictures\WhirlWindSilverMini.ico</ApplicationIcon>
+    <ApplicationIcon>../Pictures/WhirlWindSilverMini.ico</ApplicationIcon>
   </PropertyGroup>
 
   <ItemGroup>

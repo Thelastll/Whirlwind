@@ -19,6 +19,7 @@ namespace Whirlwind.Properties
     internal sealed partial class Settings : global::System.Configuration.ApplicationSettingsBase
     {
         internal string ip_sender = null;
+        internal string port_udp_sender = "3865";
         internal string port_sender = "3866";
         internal string port_file_sender = "3867";
         internal bool window_was_opened = false;

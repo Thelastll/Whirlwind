@@ -10,15 +10,12 @@ namespace Whirlwind
     internal static class NetworkProtocols
     {
         [StructLayout(LayoutKind.Sequential)]
-        public unsafe struct TypeMessage8
+        internal unsafe struct TypeMessage8
         {
-            public fixed byte Bytes[8];
+            internal fixed byte Bytes[8];
         }
 
-        public static Dictionary<string, List<byte[]>> receivingFiles = new();
-
-
-        public static byte[] ip_to_bytes(string ip)
+        internal static byte[] ip_to_bytes(string ip)
         {
             string[] parts = ip.Split('.');
 
@@ -32,7 +29,7 @@ namespace Whirlwind
             return bytes;
         }
 
-        public static unsafe TypeMessage8 build_saved_packet_identification(byte protocolType = 0, ushort protocolVersion = 0, string senderIp = "127.0.0.1", byte action = 0)
+        internal static unsafe TypeMessage8 build_saved_packet_identification(byte protocolType = 0, ushort protocolVersion = 0, string senderIp = "127.0.0.1", byte action = 0)
         {
             TypeMessage8 tm = new TypeMessage8();
 
@@ -52,17 +49,7 @@ namespace Whirlwind
             return tm;
         }
 
-        public static (byte, ushort, string, byte) on_parse_saved_packet_identification(byte[] packet)
-        {
-            byte protocolType = packet[0];
-            ushort protocolVersion = (ushort)((packet[1] << 8) | packet[2]);
-            string ip = $"{packet[3]}.{packet[4]}.{packet[5]}.{packet[6]}";
-            byte action = packet[7];
-
-            return (protocolType, protocolVersion, ip, action);
-        }
-
-        public static byte[] build_packet(byte protocol_type, ushort protocol_version, string senderIp, byte[] body)
+        internal static byte[] build_packet(byte protocol_type, ushort protocol_version, string senderIp, byte[] body)
         {
             byte[] ip_bytes = ip_to_bytes(senderIp);
             if (ip_bytes == null) return null;
@@ -90,7 +77,7 @@ namespace Whirlwind
             return packet;
         }
 
-        public static (ushort, byte[]) build_system_extra_data_v0(byte action, byte future_type, ushort future_version)
+        internal static (ushort, byte[]) build_system_extra_data_v0(byte action, byte future_type, ushort future_version)
         {
             byte[] data = new byte[4];
 
@@ -103,7 +90,14 @@ namespace Whirlwind
             return (0, data);
         }
 
-        public static byte[] build_system_packet(string senderIp, long seconds, (ushort protocol_version, byte[] data) extra)
+        internal static (ushort, byte[]) build_system_extra_data_v1(byte action)
+        {
+            byte[] data = { action };
+
+            return (1, data);
+        }
+
+        internal static byte[] build_system_packet(string senderIp, long seconds, (ushort protocol_version, byte[] data) extra)
         {
             if (extra.data == null)
                 extra.data = Array.Empty<byte>();
@@ -115,22 +109,20 @@ namespace Whirlwind
             byte[] body = new byte[5 + extra.data.Length];
             int offset = 0;
 
-            // seconds (5 bytes)
             Array.Copy(secBytes, secBytes.Length - 5, body, offset, 5);
             offset += 5;
 
-            // extra_data
             Array.Copy(extra.data, 0, body, offset, extra.data.Length);
 
             return build_packet(protocol_type: 0, protocol_version: extra.protocol_version, senderIp: senderIp, body: body);
         }
 
-        public static (ushort, byte[]) build_text_extra_data_v0()
+        internal static (ushort, byte[]) build_text_extra_data_v0()
         {
             return (0, null);
         }
 
-        public static byte[] build_text_packet(string senderIp, long seconds, byte device_type, byte message_type, (ushort protocol_version, byte[] data) extra, string message)
+        internal static byte[] build_text_packet(string senderIp, long seconds, byte device_type, byte message_type, (ushort protocol_version, byte[] data) extra, string message)
         {
             if (extra.data == null)
                 extra.data = Array.Empty<byte>();
@@ -169,7 +161,7 @@ namespace Whirlwind
             );
         }
 
-        public static (ushort, byte[]) build_file_extra_data_v1(long totalSize, long offset)
+        internal static (ushort, byte[]) build_file_extra_data_v1(long totalSize, long offset)
         {
             byte[] packet = new byte[16];
 
@@ -180,7 +172,7 @@ namespace Whirlwind
             return (1, packet);
         }
 
-        public static byte[] build_file_packet(string senderIp, long seconds, byte device_type, byte message_type, 
+        internal static byte[] build_file_packet(string senderIp, long seconds, byte device_type, byte message_type, 
                                                 (ushort protocol_version, byte[] data) extra,string fileName, byte[] fileContent)
         {
             if (extra.data == null)
@@ -233,9 +225,8 @@ namespace Whirlwind
                 body: body
             );
         }
-
-
-        public static (byte action, byte future_type, ushort future_version) on_parse_system_extra_data_v0(byte[] extra_data)
+        
+        internal static (byte action, byte future_type, ushort future_version) on_parse_system_extra_data_v0(byte[] extra_data)
         {
             if (extra_data == null || extra_data.Length < 4)
                 return (0, 0, 0);
@@ -247,8 +238,15 @@ namespace Whirlwind
             return (action, future_type, future_version);
         }
 
+        internal static byte on_parse_system_extra_data_v1(byte[] extra_data)
+        {
+            if (extra_data == null || extra_data.Length < 1)
+                return 0;
 
-        public static (long seconds, byte[] extra_data) on_parse_system_packet(byte[] packet)
+            return (extra_data[0]);
+        }
+
+        internal static (long seconds, byte[] extra_data) on_parse_system_packet(byte[] packet)
         {
             int offset = 11;
 
@@ -269,7 +267,7 @@ namespace Whirlwind
             return (seconds, extra_data);
         }
 
-        public static (long seconds, byte device_type, byte message_type, byte[] extra_data, string Message) on_parse_text_packet(byte[] packet)
+        internal static (long seconds, byte device_type, byte message_type, byte[] extra_data, string Message) on_parse_text_packet(byte[] packet)
         {
             int offset = 11;
 
@@ -312,7 +310,7 @@ namespace Whirlwind
             return (seconds, device_type, message_type, extra_data, message);
         }
 
-        public static (long totalSize, long offset) on_parse_file_extra_data_v1(byte[] extra_data)
+        internal static (long totalSize, long offset) on_parse_file_extra_data_v1(byte[] extra_data)
         {
             if (extra_data == null || extra_data.Length < 16)
                 return (0, 0);
@@ -323,7 +321,7 @@ namespace Whirlwind
             return (totalSize, offset);
         }
 
-        public static (long seconds, byte device_type, byte message_type, byte[] extra_data, string fileName, byte[] fileContent) 
+        internal static (long seconds, byte device_type, byte message_type, byte[] extra_data, string fileName, byte[] fileContent) 
         on_parse_file_packet(byte[] packet)
         {
             int offset = 11;
